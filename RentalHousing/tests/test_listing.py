@@ -3,7 +3,7 @@ from faker import Faker
 import random
 
 from rental_api import RentalApi
-from apps.enum1 import Roles, Types
+from apps.core.enums import Roles, Types
 
 BASE_URL = "http://localhost:8000/api/v1"
 EMAIL_LESSOR = "user2@example.com"

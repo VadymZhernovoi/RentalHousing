@@ -2,7 +2,7 @@ import requests
 from faker import Faker
 import random
 
-from apps.enum1 import Types
+from apps.core.enums import Types
 
 fake = Faker()
 
