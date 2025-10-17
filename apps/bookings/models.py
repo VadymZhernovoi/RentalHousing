@@ -87,15 +87,17 @@ class Booking(TimeStampedModel):
 
     def clean(self):
         listing = self.listing
-        print('listing', listing)
         errors = {}
         # Check (outside DRF)
         if hasattr(listing, "is_active") and not listing.is_active:
             errors["listing"] = "Listing is inactive and cannot be booked."
+        # span_days_max: span_days_max=Null - 365 days
+        span_days_max = listing.span_days_max if listing.span_days_max > 0 else 365
+        if (self.end_date - self.start_date).days > span_days_max:
+            errors["span_days"] = f"Reservations cannot be made for a period longer than {span_days_max} days."
         if listing.guests_max > 0 and self.guests > listing.guests_max:
             errors["guests"] = f"Guests exceed the listing limit (max: {listing.guests_max})."
-        limit = max(0, listing.baby_crib_max or 0)
-        if self.baby_cribs > limit:
+        if listing.baby_crib_max > 0 and self.baby_cribs > listing.baby_crib_max:
             errors["baby_cribs"] = f"Baby cribs exceed the listing limit (max: {listing.baby_crib_max}."
         if self.kitchen_needed and listing.has_kitchen is False:
             errors["kitchen_needed"] = "Kitchen is not available for this listing."

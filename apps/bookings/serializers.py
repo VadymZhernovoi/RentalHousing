@@ -24,7 +24,7 @@ class BookingCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"end_date": "end_date must be after start_date."})
 
         today = timezone.localdate()
-        # пересечение: start < e.end AND end > e.start
+        # intersection: start < e.end AND end > e.start
         overlap_qs = Booking.objects.filter(
             listing=listing, status=StatusBooking.APPROVED, end_date__gt=today
             ).filter(Q(start_date__lt=end) & Q(end_date__gt=start))
@@ -35,17 +35,27 @@ class BookingCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"non_field_errors": "Dates overlap with an approved booking that has not finished yet."}
             )
+        # span_days_max: span_days_max=Null - 365 days
+        span_days_max = listing.span_days_max if listing.span_days_max > 0 else 365
+        if (end - start).days > span_days_max:
+            raise serializers.ValidationError({
+                "span_days":
+                    f"Reservations cannot be made for a period longer than {span_days_max} days."
+            })
 
         guests = attrs.get("guests", getattr(self.instance, "guests", 1))
         baby_cribs = attrs.get("baby_cribs", getattr(self.instance, "baby_cribs", 0))
         kitchen_needed = attrs.get("kitchen_needed", getattr(self.instance, "kitchen_needed", False))
         parking_needed = attrs.get("parking_needed", getattr(self.instance, "parking_needed", False))
         pets = attrs.get("pets", getattr(self.instance, "pets", False))
+
+
         errors = {}
         # Check
         # is_active
         if hasattr(listing, "is_active") and not listing.is_active:
             errors["listing"] = "Listing is inactive and cannot be booked."
+
         # Guests: max_guests=0 - no limit
         if listing.guests_max > 0 and guests > listing.guests_max:
             errors["guests"] = f"Guests exceed the listing limit (max: {listing.guests_max})."
