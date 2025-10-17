@@ -2,8 +2,6 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,python,pycharm+all,django
 
 ### Django ###
-seed.py
-test_booking.py
 *.log
 *.pot
 *.pyc
@@ -385,5 +383,8 @@ poetry.toml
 
 # LSP config files
 pyrightconfig.json
+
+seed.py
+test_booking.py
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,python,pycharm+all,django
