@@ -29,7 +29,7 @@ from ..core.enums import Roles
 #         fields = ("id", "username", "nickname", "email", "first_name", "last_name", "role")
 
 class RegisterUserSerializer(serializers.ModelSerializer):
-    # принимаем пароль отдельно и валидируем
+    # Password is accepted separately and validated.
     password = serializers.CharField(write_only=True, min_length=8)
     password2 = serializers.CharField(write_only=True)
     role = serializers.ChoiceField(choices=Roles.choices, required=True)
@@ -39,7 +39,6 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         fields = ("email", "username", "first_name", "last_name", "password", "password2", "role", "nickname")
 
     def validate_email(self, value):
-        # уникальность уже на уровне модели, но дадим дружелюбную ошибку
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("User with this email already exists.")
         return value
