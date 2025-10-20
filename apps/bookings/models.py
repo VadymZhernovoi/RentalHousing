@@ -81,7 +81,7 @@ class Booking(TimeStampedModel):
 
     def calc_total_cost(self) -> int:
         """Calculates the cost (date, related listing)"""
-        nights = max((self.end_date - self.start_date).days, 0)
+        nights = max((self.end_date - self.start_date).days, 1 if self.start_date == self.end_date else 0)
         price = getattr(self.listing, "price", 0)
         return nights * price
 
@@ -92,7 +92,7 @@ class Booking(TimeStampedModel):
         if hasattr(listing, "is_active") and not listing.is_active:
             errors["listing"] = "Listing is inactive and cannot be booked."
         # span_days_max: span_days_max=Null - 365 days
-        span_days_max = listing.span_days_max if listing.span_days_max > 0 else 365
+        span_days_max = listing.span_days_max if listing.span_days_max is int and listing.span_days_max > 0 else 365
         if (self.end_date - self.start_date).days > span_days_max:
             errors["span_days"] = f"Reservations cannot be made for a period longer than {span_days_max} days."
         if listing.guests_max > 0 and self.guests > listing.guests_max:

@@ -36,7 +36,7 @@ class BookingCreateUpdateSerializer(serializers.ModelSerializer):
                 {"non_field_errors": "Dates overlap with an approved booking that has not finished yet."}
             )
         # span_days_max: span_days_max=Null - 365 days
-        span_days_max = listing.span_days_max if listing.span_days_max > 0 else 365
+        span_days_max = listing.span_days_max if listing.span_days_max is int and listing.span_days_max > 0 else 365
         if (end - start).days > span_days_max:
             raise serializers.ValidationError({
                 "span_days":

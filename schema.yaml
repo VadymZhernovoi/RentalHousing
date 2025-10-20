@@ -1,0 +1,2409 @@
+openapi: 3.0.3
+info:
+  title: RentalHousing API
+  version: 1.0.0
+  description: Backend API for listings, bookings, reviews with roles/groups.
+paths:
+  /api/v1/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      security:
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/v1/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      security:
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/bookings/:
+    get:
+      operationId: bookings_list
+      summary: List bookings
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBookingCreateUpdateList'
+          description: ''
+    post:
+      operationId: bookings_create
+      summary: Create booking
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingCreateUpdate'
+          description: ''
+  /api/v1/bookings/{id}/:
+    get:
+      operationId: bookings_retrieve
+      summary: Get booking
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this booking.
+        required: true
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingCreateUpdate'
+          description: ''
+    put:
+      operationId: bookings_update
+      summary: Update booking
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this booking.
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingCreateUpdate'
+          description: ''
+    patch:
+      operationId: bookings_partial_update
+      summary: Patch booking
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this booking.
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBookingCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBookingCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBookingCreateUpdateRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingCreateUpdate'
+          description: ''
+    delete:
+      operationId: bookings_destroy
+      summary: Delete booking
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this booking.
+        required: true
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/bookings/{id}/approve/:
+    post:
+      operationId: booking_approve
+      description: |-
+        Action - Approve/Pending booking by Lessor
+        :param request: POST /api/v1/bookings/{id}/approve/
+        :return: retry with COMPLETED → 200
+      summary: Approve booking
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this booking.
+        required: true
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          description: Booking approved
+        '400':
+          description: Only pending can be approved
+        '403':
+          description: Forbidden
+        '409':
+          description: Dates overlap with another approved booking
+  /api/v1/bookings/{id}/cancelled/:
+    post:
+      operationId: booking_cancel
+      description: |-
+        Action - Cancel booking by Renter (owner) before deadline
+        :param request: POST /api/v1/bookings/{id}/cancelled/
+        :return: retry on CANCELLED → 200
+      summary: Cancel booking by renter before deadline
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this booking.
+        required: true
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason_cancel:
+                  type: string
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          description: Cancelled
+        '400':
+          description: Deadline passed / wrong status
+        '403':
+          description: Forbidden
+  /api/v1/bookings/{id}/completed/:
+    post:
+      operationId: booking_complete
+      description: |-
+        Action - Completed booking by Lessor (owner of the listing) after checkout
+        :param request: POST /api/v1/bookings/{id}/completed/
+        :return: retry on COMPLETED → 200
+      summary: Complete booking by lessor after checkout
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this booking.
+        required: true
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          description: Completed
+        '400':
+          description: Before checkout or wrong status
+        '403':
+          description: Forbidden
+  /api/v1/bookings/{id}/decline/:
+    post:
+      operationId: booking_decline
+      description: |-
+        Action - Decline booking by Lessor
+        :param request: POST /api/v1/bookings/{id}/decline/
+        :return: retry with COMPLETED → 200
+      summary: Decline booking
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this booking.
+        required: true
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          description: Booking declined
+        '400':
+          description: Only pending can be declined
+        '403':
+          description: Forbidden
+  /api/v1/listings/:
+    get:
+      operationId: listings_list
+      description: 'Statistics: saves search history'
+      parameters:
+      - in: query
+        name: all
+        schema:
+          type: boolean
+        description: 'For lessor: show active + own inactive'
+      - in: query
+        name: baby_cribs
+        schema:
+          type: integer
+      - in: query
+        name: city
+        schema:
+          type: string
+      - in: query
+        name: district
+        schema:
+          type: string
+      - in: query
+        name: guests
+        schema:
+          type: integer
+      - in: query
+        name: has_kitchen
+        schema:
+          type: boolean
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Sort fields. Ex: price,-created_at'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: parking_available
+        schema:
+          type: boolean
+      - in: query
+        name: pets_possible
+        schema:
+          type: boolean
+      - in: query
+        name: price_max
+        schema:
+          type: integer
+      - in: query
+        name: price_min
+        schema:
+          type: integer
+      - in: query
+        name: rooms_max
+        schema:
+          type: integer
+      - in: query
+        name: rooms_min
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Full-text search in title/description
+      - in: query
+        name: type
+        schema:
+          type: string
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedListingList'
+          description: ''
+    post:
+      operationId: listings_create
+      parameters:
+      - in: query
+        name: all
+        schema:
+          type: boolean
+        description: 'For lessor: show active + own inactive'
+      - in: query
+        name: baby_cribs
+        schema:
+          type: integer
+      - in: query
+        name: guests
+        schema:
+          type: integer
+      - in: query
+        name: has_kitchen
+        schema:
+          type: boolean
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Sort fields. Ex: price,-created_at'
+      - in: query
+        name: parking_available
+        schema:
+          type: boolean
+      - in: query
+        name: pets_possible
+        schema:
+          type: boolean
+      - in: query
+        name: price_max
+        schema:
+          type: integer
+      - in: query
+        name: price_min
+        schema:
+          type: integer
+      - in: query
+        name: rooms_max
+        schema:
+          type: integer
+      - in: query
+        name: rooms_min
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Full-text search in title/description
+      tags:
+      - listings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ListingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ListingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+          description: ''
+  /api/v1/listings/{listing_id}/reviews/:
+    get:
+      operationId: listings_reviews_list
+      description: |-
+        List reviews (optionally filter by listing, only-my) and create a review.
+        Query params:
+        - `listing`: filter by listing id
+        - `my=true`: only my reviews (auth required)
+        - `ordering`: e.g. `-created_at`, `rating`
+
+        POST body: `{booking, rating, comment}` — `listing` will be substituted from `booking`.
+      parameters:
+      - in: query
+        name: listing
+        schema:
+          type: integer
+      - in: path
+        name: listing_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReviewList'
+          description: List of reviews (paginated)
+    post:
+      operationId: listings_reviews_create
+      description: |-
+        List reviews (optionally filter by listing, only-my) and create a review.
+        Query params:
+        - `listing`: filter by listing id
+        - `my=true`: only my reviews (auth required)
+        - `ordering`: e.g. `-created_at`, `rating`
+
+        POST body: `{booking, rating, comment}` — `listing` will be substituted from `booking`.
+      parameters:
+      - in: path
+        name: listing_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: List of reviews (paginated)
+  /api/v1/listings/{listing_id}/reviews/{id}/moderate-validate/:
+    post:
+      operationId: listings_reviews_moderate_validate_create
+      description: |-
+        List reviews (optionally filter by listing, only-my) and create a review.
+        Query params:
+        - `listing`: filter by listing id
+        - `my=true`: only my reviews (auth required)
+        - `ordering`: e.g. `-created_at`, `rating`
+
+        POST body: `{booking, rating, comment}` — `listing` will be substituted from `booking`.
+      summary: 'Moderate review: set `is_valid` true/false (moderator/admin only).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this review.
+        required: true
+      - in: path
+        name: listing_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - listings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_valid:
+                  type: boolean
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          description: Moderation updated
+        '403':
+          description: Forbidden
+  /api/v1/listings/{listing_id}/reviews/{id}/owner-comment/:
+    post:
+      operationId: listings_reviews_owner_comment_create
+      description: |-
+        List reviews (optionally filter by listing, only-my) and create a review.
+        Query params:
+        - `listing`: filter by listing id
+        - `my=true`: only my reviews (auth required)
+        - `ordering`: e.g. `-created_at`, `rating`
+
+        POST body: `{booking, rating, comment}` — `listing` will be substituted from `booking`.
+      summary: Add/update owner reply (`owner_comment`). Allowed for listing owner,
+        moderator, or admin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this review.
+        required: true
+      - in: path
+        name: listing_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - listings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                owner_comment:
+                  type: string
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          description: Owner comment saved
+        '403':
+          description: Forbidden
+  /api/v1/listings/{id}/:
+    get:
+      operationId: listings_retrieve
+      description: 'Statistics: making a view counter increment'
+      parameters:
+      - in: query
+        name: all
+        schema:
+          type: boolean
+        description: 'For lessor: show active + own inactive'
+      - in: query
+        name: baby_cribs
+        schema:
+          type: integer
+      - in: query
+        name: guests
+        schema:
+          type: integer
+      - in: query
+        name: has_kitchen
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Listing.
+        required: true
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Sort fields. Ex: price,-created_at'
+      - in: query
+        name: parking_available
+        schema:
+          type: boolean
+      - in: query
+        name: pets_possible
+        schema:
+          type: boolean
+      - in: query
+        name: price_max
+        schema:
+          type: integer
+      - in: query
+        name: price_min
+        schema:
+          type: integer
+      - in: query
+        name: rooms_max
+        schema:
+          type: integer
+      - in: query
+        name: rooms_min
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Full-text search in title/description
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+          description: ''
+    put:
+      operationId: listings_update
+      description: Disable Listing editing after approval (or after the deadline)
+      summary: 'Listing full update. The owner of your listing or admin. '
+      parameters:
+      - in: query
+        name: all
+        schema:
+          type: boolean
+        description: 'For lessor: show active + own inactive'
+      - in: query
+        name: baby_cribs
+        schema:
+          type: integer
+      - in: query
+        name: guests
+        schema:
+          type: integer
+      - in: query
+        name: has_kitchen
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Listing.
+        required: true
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Sort fields. Ex: price,-created_at'
+      - in: query
+        name: parking_available
+        schema:
+          type: boolean
+      - in: query
+        name: pets_possible
+        schema:
+          type: boolean
+      - in: query
+        name: price_max
+        schema:
+          type: integer
+      - in: query
+        name: price_min
+        schema:
+          type: integer
+      - in: query
+        name: rooms_max
+        schema:
+          type: integer
+      - in: query
+        name: rooms_min
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Full-text search in title/description
+      tags:
+      - listings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ListingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ListingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          description: Updated
+        '400':
+          description: Blocked by open cancel window of an approved booking
+        '403':
+          description: Forbidden
+    patch:
+      operationId: listings_partial_update
+      description: Disable Listing editing after approval (or after the deadline)
+      parameters:
+      - in: query
+        name: all
+        schema:
+          type: boolean
+        description: 'For lessor: show active + own inactive'
+      - in: query
+        name: baby_cribs
+        schema:
+          type: integer
+      - in: query
+        name: guests
+        schema:
+          type: integer
+      - in: query
+        name: has_kitchen
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Listing.
+        required: true
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Sort fields. Ex: price,-created_at'
+      - in: query
+        name: parking_available
+        schema:
+          type: boolean
+      - in: query
+        name: pets_possible
+        schema:
+          type: boolean
+      - in: query
+        name: price_max
+        schema:
+          type: integer
+      - in: query
+        name: price_min
+        schema:
+          type: integer
+      - in: query
+        name: rooms_max
+        schema:
+          type: integer
+      - in: query
+        name: rooms_min
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Full-text search in title/description
+      tags:
+      - listings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedListingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedListingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedListingRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+          description: ''
+    delete:
+      operationId: listings_destroy
+      parameters:
+      - in: query
+        name: all
+        schema:
+          type: boolean
+        description: 'For lessor: show active + own inactive'
+      - in: query
+        name: baby_cribs
+        schema:
+          type: integer
+      - in: query
+        name: guests
+        schema:
+          type: integer
+      - in: query
+        name: has_kitchen
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Listing.
+        required: true
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Sort fields. Ex: price,-created_at'
+      - in: query
+        name: parking_available
+        schema:
+          type: boolean
+      - in: query
+        name: pets_possible
+        schema:
+          type: boolean
+      - in: query
+        name: price_max
+        schema:
+          type: integer
+      - in: query
+        name: price_min
+        schema:
+          type: integer
+      - in: query
+        name: rooms_max
+        schema:
+          type: integer
+      - in: query
+        name: rooms_min
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Full-text search in title/description
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/listings/{id}/toggle-status/:
+    post:
+      operationId: listings_toggle_status_create
+      description: |-
+        Toggle listing status (is_active).
+        The owner of your listing or a user with the permission `listings.toggle_active_listing`/admin.
+        Can force the value via ?value=true|false.
+      parameters:
+      - in: query
+        name: all
+        schema:
+          type: boolean
+        description: 'For lessor: show active + own inactive'
+      - in: query
+        name: baby_cribs
+        schema:
+          type: integer
+      - in: query
+        name: guests
+        schema:
+          type: integer
+      - in: query
+        name: has_kitchen
+        schema:
+          type: boolean
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Listing.
+        required: true
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Sort fields. Ex: price,-created_at'
+      - in: query
+        name: parking_available
+        schema:
+          type: boolean
+      - in: query
+        name: pets_possible
+        schema:
+          type: boolean
+      - in: query
+        name: price_max
+        schema:
+          type: integer
+      - in: query
+        name: price_min
+        schema:
+          type: integer
+      - in: query
+        name: rooms_max
+        schema:
+          type: integer
+      - in: query
+        name: rooms_min
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Full-text search in title/description
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: Status updated / No change
+        '403':
+          description: Forbidden
+  /api/v1/reviews/:
+    get:
+      operationId: reviews_list
+      description: |-
+        List reviews (optionally filter by listing, only-my) and create a review.
+        Query params:
+        - `listing`: filter by listing id
+        - `my=true`: only my reviews (auth required)
+        - `ordering`: e.g. `-created_at`, `rating`
+
+        POST body: `{booking, rating, comment}` — `listing` will be substituted from `booking`.
+      parameters:
+      - in: query
+        name: listing
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReviewList'
+          description: List of reviews (paginated)
+    post:
+      operationId: reviews_create
+      description: |-
+        List reviews (optionally filter by listing, only-my) and create a review.
+        Query params:
+        - `listing`: filter by listing id
+        - `my=true`: only my reviews (auth required)
+        - `ordering`: e.g. `-created_at`, `rating`
+
+        POST body: `{booking, rating, comment}` — `listing` will be substituted from `booking`.
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: List of reviews (paginated)
+  /api/v1/reviews/{id}/moderate-validate/:
+    post:
+      operationId: reviews_moderate_validate_create
+      description: |-
+        List reviews (optionally filter by listing, only-my) and create a review.
+        Query params:
+        - `listing`: filter by listing id
+        - `my=true`: only my reviews (auth required)
+        - `ordering`: e.g. `-created_at`, `rating`
+
+        POST body: `{booking, rating, comment}` — `listing` will be substituted from `booking`.
+      summary: 'Moderate review: set `is_valid` true/false (moderator/admin only).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this review.
+        required: true
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_valid:
+                  type: boolean
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          description: Moderation updated
+        '403':
+          description: Forbidden
+  /api/v1/reviews/{id}/owner-comment/:
+    post:
+      operationId: reviews_owner_comment_create
+      description: |-
+        List reviews (optionally filter by listing, only-my) and create a review.
+        Query params:
+        - `listing`: filter by listing id
+        - `my=true`: only my reviews (auth required)
+        - `ordering`: e.g. `-created_at`, `rating`
+
+        POST body: `{booking, rating, comment}` — `listing` will be substituted from `booking`.
+      summary: Add/update owner reply (`owner_comment`). Allowed for listing owner,
+        moderator, or admin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this review.
+        required: true
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                owner_comment:
+                  type: string
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          description: Owner comment saved
+        '403':
+          description: Forbidden
+  /api/v1/statistics/popular/listings/:
+    get:
+      operationId: statistics_popular_listings_list
+      description: |-
+        List popular listings with aggregated counters.
+        Annotated fields in response:
+        - `views_cnt` (views), `reviews_cnt` (reviews), `rating_avg` (avg rating).
+        Visibility rules:
+        - anonymous / renter → only active
+        - moderator / admin → all (active + inactive)
+        - lessor → only own (default) OR `?all=true` → active + own inactive
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedListingList'
+          description: List of popular listings (paginated)
+  /api/v1/statistics/popular/listings/{id}/:
+    get:
+      operationId: statistics_popular_listings_retrieve
+      description: |-
+        List popular listings with aggregated counters.
+        Annotated fields in response:
+        - `views_cnt` (views), `reviews_cnt` (reviews), `rating_avg` (avg rating).
+        Visibility rules:
+        - anonymous / renter → only active
+        - moderator / admin → all (active + inactive)
+        - lessor → only own (default) OR `?all=true` → active + own inactive
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Listing.
+        required: true
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+          description: List of popular listings (paginated)
+  /api/v1/statistics/popular/searches/:
+    get:
+      operationId: statistics_popular_searches_list
+      description: GET /api/v1/statistics/popular/searches/ - list
+      summary: List popular search keywords ordered by count (desc).
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSearchQueryStatsList'
+          description: List of popular searches (paginated)
+  /api/v1/statistics/popular/searches/{id}/:
+    get:
+      operationId: statistics_popular_searches_retrieve
+      description: GET /api/v1/statistics/popular/searches/ - list
+      summary: List popular search keywords ordered by count (desc).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Search keywords stats.
+        required: true
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchQueryStats'
+          description: List of popular searches (paginated)
+  /api/v1/statistics/searches/:
+    get:
+      operationId: statistics_searches_list
+      description: |-
+        List search history with filters.
+        Query params:
+        - `keyword` (substring in keywords)
+        - `date_from`, `date_to`
+        - `param` + `param_value` (filter by key/value stored in params)
+        - `ordering` (e.g. -created_at)
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: keyword
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: param
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSearchQueryList'
+          description: List of search queries (paginated)
+  /api/v1/statistics/searches/{id}/:
+    get:
+      operationId: statistics_searches_retrieve
+      description: |-
+        List search history with filters.
+        Query params:
+        - `keyword` (substring in keywords)
+        - `date_from`, `date_to`
+        - `param` + `param_value` (filter by key/value stored in params)
+        - `ordering` (e.g. -created_at)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Search query.
+        required: true
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchQuery'
+          description: List of search queries (paginated)
+  /api/v1/statistics/searches/summary/:
+    get:
+      operationId: statistics_searches_summary_retrieve
+      description: |-
+        Aggregated popular keywords subject to the same filters as list endpoint.
+        Response: array of objects `{keywords, count}` ordered by `count desc`.
+      tags:
+      - statistics
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    keywords:
+                      type: string
+                    count:
+                      type: integer
+          description: Aggregated popular keywords
+  /api/v1/user/login/:
+    post:
+      operationId: user_login_create
+      description: 'Login with email/password. On success sets JWT cookies (`access_token`,
+        `refresh_token`). Body: `{ "email": "...", "password": "..." }`.'
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: Authenticated; JWT cookies set
+        '401':
+          description: Invalid credentials
+  /api/v1/user/logout/:
+    post:
+      operationId: user_logout_create
+      summary: 'Logout: clear JWT cookies (`access_token`, `refresh_token`).'
+      tags:
+      - user
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: Logged out; cookies cleared
+  /api/v1/user/me/:
+    get:
+      operationId: user_me_retrieve
+      summary: Get current user (requires authentication).
+      tags:
+      - user
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLoggedIn'
+          description: Current user
+    put:
+      operationId: user_me_update
+      summary: Get current user (requires authentication).
+      tags:
+      - user
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLoggedIn'
+          description: Current user
+    patch:
+      operationId: user_me_partial_update
+      summary: Get current user (requires authentication).
+      tags:
+      - user
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLoggedIn'
+          description: Current user
+  /api/v1/user/register/:
+    post:
+      operationId: user_register_create
+      description: Register a new user. Role is required. On success sets JWT cookies
+        (access_token, refresh_token).
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+        jwtCookieAuth: []
+      - {}
+      responses:
+        '201':
+          description: User registered and JWT cookies set
+        '400':
+          description: Validation error
+components:
+  schemas:
+    BookingCreateUpdate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        listing:
+          type: integer
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        guests:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        baby_cribs:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        kitchen_needed:
+          type: boolean
+          nullable: true
+        parking_needed:
+          type: boolean
+          nullable: true
+        pets:
+          type: boolean
+        status:
+          enum:
+          - pending
+          - approved
+          - declined
+          - cancelled
+          - completed
+          type: string
+          description: |-
+            * `pending` - Pending
+            * `approved` - Approved
+            * `declined` - Declined
+            * `cancelled` - Cancelled
+            * `completed` - Completed
+          x-spec-enum-id: 90f9418aa93dc8a3
+          readOnly: true
+      required:
+      - end_date
+      - id
+      - listing
+      - start_date
+      - status
+    BookingCreateUpdateRequest:
+      type: object
+      properties:
+        listing:
+          type: integer
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        guests:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        baby_cribs:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        kitchen_needed:
+          type: boolean
+          nullable: true
+        parking_needed:
+          type: boolean
+          nullable: true
+        pets:
+          type: boolean
+      required:
+      - end_date
+      - listing
+      - start_date
+    Listing:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        owner:
+          type: integer
+          readOnly: true
+        owner_id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+        location:
+          type: string
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 100
+        district:
+          type: string
+          maxLength: 100
+        country:
+          type: string
+          maxLength: 2
+        price:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        currency:
+          type: string
+          maxLength: 3
+        span_days_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          title: Max Span Days
+        rooms:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        guests_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Max Guests
+        baby_crib_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Max Baby Cribs
+        has_kitchen:
+          type: boolean
+          nullable: true
+          title: Kitchen Available
+        parking_available:
+          type: boolean
+          nullable: true
+        pets_possible:
+          type: boolean
+          nullable: true
+        type:
+          enum:
+          - villa
+          - house
+          - apartment
+          - penthouse
+          - studio
+          - room
+          - other
+          type: string
+          description: |-
+            * `villa` - Villa
+            * `house` - House
+            * `apartment` - Apartment
+            * `penthouse` - Penthouse
+            * `studio` - Studio
+            * `room` - Room
+            * `other` - Other
+          x-spec-enum-id: 7579bcf243b9b2d3
+        is_active:
+          type: boolean
+      required:
+      - created_at
+      - id
+      - location
+      - owner
+      - owner_id
+      - title
+      - updated_at
+    ListingRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+        location:
+          type: string
+          minLength: 1
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 100
+        district:
+          type: string
+          maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          maxLength: 2
+        price:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        span_days_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          title: Max Span Days
+        rooms:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        guests_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Max Guests
+        baby_crib_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Max Baby Cribs
+        has_kitchen:
+          type: boolean
+          nullable: true
+          title: Kitchen Available
+        parking_available:
+          type: boolean
+          nullable: true
+        pets_possible:
+          type: boolean
+          nullable: true
+        type:
+          enum:
+          - villa
+          - house
+          - apartment
+          - penthouse
+          - studio
+          - room
+          - other
+          type: string
+          description: |-
+            * `villa` - Villa
+            * `house` - House
+            * `apartment` - Apartment
+            * `penthouse` - Penthouse
+            * `studio` - Studio
+            * `room` - Room
+            * `other` - Other
+          x-spec-enum-id: 7579bcf243b9b2d3
+        is_active:
+          type: boolean
+      required:
+      - location
+      - title
+    PaginatedBookingCreateUpdateList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingCreateUpdate'
+    PaginatedListingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Listing'
+    PaginatedReviewList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+    PaginatedSearchQueryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchQuery'
+    PaginatedSearchQueryStatsList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchQueryStats'
+    PatchedBookingCreateUpdateRequest:
+      type: object
+      properties:
+        listing:
+          type: integer
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        guests:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        baby_cribs:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        kitchen_needed:
+          type: boolean
+          nullable: true
+        parking_needed:
+          type: boolean
+          nullable: true
+        pets:
+          type: boolean
+    PatchedListingRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+        location:
+          type: string
+          minLength: 1
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 100
+        district:
+          type: string
+          maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          maxLength: 2
+        price:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        span_days_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          title: Max Span Days
+        rooms:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        guests_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Max Guests
+        baby_crib_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Max Baby Cribs
+        has_kitchen:
+          type: boolean
+          nullable: true
+          title: Kitchen Available
+        parking_available:
+          type: boolean
+          nullable: true
+        pets_possible:
+          type: boolean
+          nullable: true
+        type:
+          enum:
+          - villa
+          - house
+          - apartment
+          - penthouse
+          - studio
+          - room
+          - other
+          type: string
+          description: |-
+            * `villa` - Villa
+            * `house` - House
+            * `apartment` - Apartment
+            * `penthouse` - Penthouse
+            * `studio` - Studio
+            * `room` - Room
+            * `other` - Other
+          x-spec-enum-id: 7579bcf243b9b2d3
+        is_active:
+          type: boolean
+    RegisterUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          title: Email address
+          maxLength: 254
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        password2:
+          type: string
+          writeOnly: true
+          minLength: 1
+        role:
+          enum:
+          - renter
+          - lessor
+          - moderator
+          - admin
+          type: string
+          description: |-
+            * `renter` - Renter
+            * `lessor` - Lessor
+            * `moderator` - Moderator
+            * `admin` - Admin
+          x-spec-enum-id: 491536266dbe04ce
+        nickname:
+          type: string
+          nullable: true
+          description: Visible to others
+          maxLength: 30
+      required:
+      - email
+      - password
+      - password2
+      - role
+      - username
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking:
+          type: integer
+        listing:
+          type: integer
+          readOnly: true
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - booking
+      - created_at
+      - id
+      - listing
+    SearchQuery:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+          nullable: true
+        session_id:
+          type: string
+          readOnly: true
+        keywords:
+          type: string
+          readOnly: true
+        params:
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - keywords
+      - params
+      - session_id
+      - user
+    SearchQueryStats:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        keywords:
+          type: string
+          readOnly: true
+        count:
+          type: integer
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - count
+      - id
+      - keywords
+      - updated_at
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    UserLoggedIn:
+      type: object
+      description: Профиль текущего пользователя для /user/login/ (на самом деле /me).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Email address
+        username:
+          type: string
+          readOnly: true
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+        first_name:
+          type: string
+          readOnly: true
+        last_name:
+          type: string
+          readOnly: true
+        role:
+          enum:
+          - renter
+          - lessor
+          - moderator
+          - admin
+          type: string
+          description: |-
+            * `renter` - Renter
+            * `lessor` - Lessor
+            * `moderator` - Moderator
+            * `admin` - Admin
+          x-spec-enum-id: 491536266dbe04ce
+          readOnly: true
+        nickname:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Visible to others
+      required:
+      - email
+      - first_name
+      - id
+      - last_name
+      - nickname
+      - role
+      - username
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

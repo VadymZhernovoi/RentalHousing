@@ -42,7 +42,7 @@ class SearchQuery(TimeStampedModel):
         verbose_name_plural = "Search queries"
 
 
-class SearchQueryStats(models.Model):
+class SearchQueryStats(TimeStampedModel):
     keywords = models.CharField(max_length=255, unique=True, verbose_name=_("Keywords"))
     count = models.PositiveIntegerField(default=0, verbose_name=_("Count"))
 
@@ -62,7 +62,7 @@ class ListingStats(TimeStampedModel):
         "listings.Listing",
         on_delete=models.CASCADE,
         primary_key=True,
-        related_name="eng_stats",
+        related_name="listing_stats",
         verbose_name=_("Listing")
     )
     views_count = models.PositiveIntegerField(default=0, verbose_name=_("Views count"))

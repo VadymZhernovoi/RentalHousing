@@ -52,7 +52,7 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
                 key='access_token',
                 value=new_access_token,
                 httponly=True,
-                secure=False,  # Используйте True для HTTPS
+                secure=False,  # Используйте True для prod
                 samesite='Lax',
                 expires=datetime.fromtimestamp(access_expiry)
             )

@@ -11,7 +11,7 @@ class ListingFilter(df.FilterSet):
     rooms_max = df.NumberFilter(field_name="rooms", lookup_expr="lte")
     guests = df.NumberFilter(field_name="max_guests", lookup_expr="gte")
     baby_cribs = df.NumberFilter(field_name="max_baby_crib", lookup_expr="gte")
-    kitchen_needed = df.BooleanFilter(field_name="filter_kitchen_needed")
+    has_kitchen = df.BooleanFilter(field_name="filter_has_kitchen")
     parking_available = df.BooleanFilter(field_name="filter_parking_available")
     pets_possible = df.BooleanFilter(field_name="filter_pets_possible")
 

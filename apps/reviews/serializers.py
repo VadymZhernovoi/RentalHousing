@@ -1,3 +1,4 @@
+from django.db.models.query_utils import Q
 from rest_framework import serializers
 from django.utils import timezone
 
@@ -27,16 +28,18 @@ class ReviewSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         user = getattr(request, "user", None)
 
-        qs = Booking.objects.filter(status="completed").select_related("listing")
+        today = timezone.now().date()
+        queryset = Booking.objects.filter(
+            Q(status=StatusBooking.COMPLETED) | Q(end_date__lte=today)).select_related("listing")
 
         # admin can select any completed items; a non-admin can select only their own completed items.
         if not (user and user.is_authenticated and getattr(user, "role", None) == "admin"):
             if user and user.is_authenticated:
-                qs = qs.filter(renter_id=user.id)
+                queryset = queryset.filter(renter_id=user.id)
             else:
-                qs = Booking.objects.none()  # anonymous user cannot create anything.
+                queryset = Booking.objects.none()  # anonymous user cannot create anything.
 
-        fields["booking"].queryset = qs
+        fields["booking"].queryset = queryset
 
         return fields
 

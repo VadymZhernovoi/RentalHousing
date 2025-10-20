@@ -19,6 +19,9 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/v1/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
@@ -27,6 +30,13 @@ urlpatterns = [
     path('api/v1/', include('apps.reviews.urls')),
     path('api/v1/', include('apps.listings.urls')),
     path('api/v1/', include('apps.bookings.urls')),
+    path('api/v1/statistics/', include('apps.statistics.urls')),
+    # OpenAPI schema (JSON/YAML)
+    path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # Swagger UI
+    path("api/v1/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    # ReDoc
+    path("api/v1/schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ]
 
 if settings.DEBUG:

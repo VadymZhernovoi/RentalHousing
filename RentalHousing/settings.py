@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from environ import Env
 from datetime import timedelta
@@ -19,22 +19,22 @@ from apps import users
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-env = Env()
-env.read_env(BASE_DIR / ".env")
+# ENV end MODE definition
+env = Env(
+    DJANGO_ENV=(str, "dev"),        # dev | prod
+    DEBUG=(bool, False),
+)
+Env.read_env(BASE_DIR / ".env")
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+ENV = env("DJANGO_ENV").lower()          # "dev" или "prod"
+DEBUG = env.bool("DEBUG", default=(ENV == "dev"))
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env.str("SECRET_KEY")
+SECRET_KEY = env("SECRET_KEY", default="__dev_only_change_me__")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool("DEBUG", default=True)
-
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS",
+                         default=["localhost", "127.0.0.1"] if ENV == "dev" else [])
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'apps.users.apps.UsersConfig',
     'apps.reviews.apps.ReviewsConfig',
     'apps.listings.apps.SearchingConfig',
-    'apps.statistics.apps.StatisticsConfig'
+    'apps.statistics.apps.StatisticsConfig',
 ]
 
 MIDDLEWARE = [
@@ -65,23 +65,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware'
 ]
 
+# user model
 AUTH_USER_MODEL = "users.User"
 
 REST_FRAMEWORK = {
-    # "DEFAULT_THROTTLE_CLASSES": [
-    #     "rest_framework.throttling.UserRateThrottle",
-    #     "rest_framework.throttling.AnonRateThrottle",
-    # ],
-    # "DEFAULT_THROTTLE_RATES": {
-    #     "user": "200/min",
-    #     "anon": "60/min",
-    # },
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.AllowAny",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     "DEFAULT_FILTER_BACKENDS": (
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
@@ -89,6 +78,46 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PAGINATION_CLASS": "RentalHousing.pagination.DefaultPagination",
     "PAGE_SIZE": 10,
+    # "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+INSTALLED_APPS += [
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
+]
+REST_FRAMEWORK.update({
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+})
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "RentalHousing API",
+    "DESCRIPTION": "Backend API for listings, bookings, reviews with roles/groups.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": r"/api/v1", # prefix API
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SECURITY": [{
+        "bearerAuth": [],
+        "jwtCookieAuth": [],
+    }],
+    "AUTHENTICATION_WHITELIST": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+    "POSTPROCESSING_HOOKS": [],
+    "SECURITY_SCHEMES": {
+        "bearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        },
+        "jwtCookieAuth": {
+            "type": "apiKey",
+            "in": "cookie",
+            "name": "access_token",
+            "description": "JWT placed in HttpOnly cookie 'access_token'",
+        },
+    },
 }
 
 SIMPLE_JWT = {
@@ -99,74 +128,67 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = "rental.housing@example.com"
-
-ROOT_URLCONF = 'RentalHousing.urls'
-
 TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
+    {'BACKEND': 'django.template.backends.django.DjangoTemplates',
+     'DIRS': [BASE_DIR / 'templates'],
+     'APP_DIRS': True,
+     'OPTIONS': {
+         'context_processors': [
+             'django.template.context_processors.request',
+             'django.contrib.auth.context_processors.auth',
+             'django.contrib.messages.context_processors.messages',
+         ],
         },
-    },
+     },
 ]
 
-WSGI_APPLICATION = 'RentalHousing.wsgi.application'
+#WSGI_APPLICATION = 'RentalHousing.wsgi.application'
+#ROOT_URLCONF = 'RentalHousing.urls'
 
+ROOT_URLCONF = "RentalHousing.urls"
+WSGI_APPLICATION = "RentalHousing.wsgi.application"
+# ASGI_APPLICATION = "RentalHousing.asgi.application"
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-if env.bool("MYSQL"):
-    DATABASES = {
-        "default": {
+def mysql_conf():
+    try:
+        return {
             "ENGINE": "django.db.backends.mysql",
-            "NAME": env.str("MYSQL_DATABASE"),
-            "USER": env.str("MYSQL_USER"),
-            "PASSWORD": env.str("MYSQL_PASSWORD"),
-            "HOST": env.str("MYSQL_HOST"),
-            "PORT": env.int("MYSQL_PORT"),
+            "NAME": os.environ["MYSQL_DATABASE"],
+            "USER": os.environ["MYSQL_USER"],
+            "PASSWORD": os.environ["MYSQL_PASSWORD"],
+            "HOST": os.environ.get("MYSQL_HOST", "localhost"),
+            "PORT": os.environ.get("MYSQL_PORT", "3306"),
+            "OPTIONS": {"charset": "utf8mb4"},
         }
-    }
+    except KeyError as e:
+        raise RuntimeError(f"DB environment variables not found: {e.args[0]}")
+# DEV: SQLite by default / PROD: DATABASE_URL from env (mysql)
+# if ENV == "prod":
+#     DATABASES = {"default": env.db("DATABASE_URL")}
+# else:
+#     DATABASES = {"default": env.db(default=f"sqlite:///{BASE_DIR/'db.sqlite3'}")}
+if ENV == "prod":
+    DATABASES = {"default": mysql_conf()}
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = 'your_email@gmail.com'
+    EMAIL_HOST_PASSWORD = 'your_password'
 else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
+    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3",}}
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = "no-reply@example.com"
 
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -176,13 +198,20 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
-STATIC_URL = 'static/'
+# LOGGING
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "DEBUG" if DEBUG else "INFO"},
+}
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

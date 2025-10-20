@@ -65,21 +65,38 @@ class ListingAdmin(admin.ModelAdmin):
     list_display = ("id", "title",
                     "owner", "city", "price", "span_days_max",
                     "guests_max", "baby_crib_max", "has_kitchen", "parking_available", "pets_possible",
-                    "created_at")
+                    "created_at", "views_count", "reviews_count", "avg_rating")
     list_filter = ("is_active", "type", "city", "created_at", "baby_crib_max", "has_kitchen", "parking_available")
     search_fields = ("title", "description", "city", "owner__email", "owner__username")
     ordering = ("-created_at",)
     autocomplete_fields = ("owner",)  # AJAX search
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at", "views_count", "reviews_count", "avg_rating",)
     fieldsets = (
         (None, {"fields": ("title", "description")}),
         ("Location", {"fields": ("location", "city", "country")}),
         ("Details", {"fields": ("price", "rooms", "span_days_max",
                                 "baby_crib_max", "has_kitchen", "parking_available", "pets_possible",
                                 "type", "is_active")}),
+        ("Statisticss", {"fields": ("views_count", "reviews_count", "avg_rating")}),
         ("Owner", {"fields": ("owner",)}),
         ("Meta", {"fields": ("created_at", "updated_at")}),
     )
     actions = [make_active, make_inactive, toggle_status]
     inlines = [BookingInline, ReviewInline]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("listing_stats", "owner")
+
+    @admin.display(ordering="listing_stats__views_count", description="Views")
+    def views_count(self, obj):
+        return getattr(getattr(obj, "listing_stats", None), "views_count", 0)
+
+    @admin.display(ordering="listing_stats__reviews_count", description="Reviews")
+    def reviews_count(self, obj):
+        return getattr(getattr(obj, "listing_stats", None), "reviews_count", 0)
+
+    @admin.display(ordering="listing_stats__avg_rating", description="Rating")
+    def avg_rating(self, obj):
+        val = getattr(getattr(obj, "listing_stats", None), "avg_rating", 0) or 0
+        return f"{float(val):.2f}"
 

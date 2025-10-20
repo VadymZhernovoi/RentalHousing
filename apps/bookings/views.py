@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from django.utils import timezone
 from rest_framework.permissions import DjangoModelPermissions, IsAuthenticated
 from django.db.models.query_utils import Q
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample, extend_schema_view
 
 from ..core.permissions import BookingCreatePermission, BookingChangePermission, BookingApproveDeclineCompletePermission
 from ..core.enums import StatusBooking
@@ -10,7 +11,14 @@ from .models import Booking
 from .serializers import BookingCreateUpdateSerializer
 from ..core.roles import is_admin, is_moderator, is_renter, is_lessor
 
-
+@extend_schema_view(
+    list=extend_schema(tags=["Bookings"], summary="List bookings"),
+    retrieve=extend_schema(tags=["Bookings"], summary="Get booking"),
+    create=extend_schema(tags=["Bookings"], summary="Create booking"),
+    update=extend_schema(tags=["Bookings"], summary="Update booking"),
+    partial_update=extend_schema(tags=["Bookings"], summary="Patch booking"),
+    destroy=extend_schema(tags=["Bookings"], summary="Delete booking"),
+)
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all().select_related("listing", "renter")
     serializer_class = BookingCreateUpdateSerializer
@@ -45,7 +53,19 @@ class BookingViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(renter=self.request.user)
 
-
+    @extend_schema(
+        tags=["Bookings"],
+        operation_id="booking_approve",
+        summary="Approve booking",
+        request=None,
+        responses={
+            200: OpenApiResponse(description="Booking approved"),
+            400: OpenApiResponse(description="Only pending can be approved"),
+            403: OpenApiResponse(description="Forbidden"),
+            409: OpenApiResponse(description="Dates overlap with another approved booking"),
+        },
+        examples=[OpenApiExample("Success", value={"id": 123, "status": "approved"}, response_only=True)],
+    )
     @action(detail=True, methods=["POST"])
     def approve(self, request, pk=None):
         """
@@ -74,6 +94,17 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking.save(update_fields=["status"])
         return response.Response({"id": booking.id, "status": booking.status}, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=["Bookings"],
+        operation_id="booking_decline",
+        summary="Decline booking",
+        request=None,
+        responses={
+            200: OpenApiResponse(description="Booking declined"),
+            400: OpenApiResponse(description="Only pending can be declined"),
+            403: OpenApiResponse(description="Forbidden"),
+        },
+    )
     @action(detail=True, methods=["POST"])
     def decline(self, request, pk=None):
         """
@@ -93,6 +124,23 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking.save(update_fields=["status"])
         return response.Response({"id": booking.id, "status": booking.status}, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=["Bookings"],
+        operation_id="booking_cancel",
+        summary="Cancel booking by renter before deadline",
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {"reason_cancel": {"type": "string"}},
+            }
+        },
+        responses={
+            200: OpenApiResponse(description="Cancelled"),
+            400: OpenApiResponse(description="Deadline passed / wrong status"),
+            403: OpenApiResponse(description="Forbidden"),
+        },
+        examples=[OpenApiExample("Success", value={"id": 123, "status": "cancelled"}, response_only=True)],
+    )
     @action(detail=True, methods=["POST"])
     def cancelled(self, request, pk=None):
         """
@@ -127,8 +175,19 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking.save(update_fields=["status", "reason_cancel"])
     
         return response.Response({"id": booking.id, "status": booking.status}, status=status.HTTP_200_OK)
-    
-    
+
+    @extend_schema(
+        tags=["Bookings"],
+        operation_id="booking_complete",
+        summary="Complete booking by lessor after checkout",
+        request=None,
+        responses={
+            200: OpenApiResponse(description="Completed"),
+            400: OpenApiResponse(description="Before checkout or wrong status"),
+            403: OpenApiResponse(description="Forbidden"),
+        },
+        examples=[OpenApiExample("Success", value={"id": 123, "status": "completed"}, response_only=True)],
+    )
     @action(detail=True, methods=["POST"])
     def completed(self, request, pk=None):
         """

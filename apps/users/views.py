@@ -6,6 +6,7 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .serializers import UserLoggedInSerializer, RegisterUserSerializer
 
@@ -36,6 +37,14 @@ def set_jwt_cookies(response, user):
         path='/'
     )
 
+@extend_schema(
+    description="Register a new user. Role is required. On success sets JWT cookies (access_token, refresh_token).",
+    request=RegisterUserSerializer,
+    responses={
+        201: OpenApiResponse(description="User registered and JWT cookies set"),
+        400: OpenApiResponse(description="Validation error"),
+    },
+)
 class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterUserSerializer(data=request.data)
@@ -48,6 +57,20 @@ class RegisterView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    summary="Get current user (requires authentication).",
+    request=None,
+    responses={200: OpenApiResponse(response=UserLoggedInSerializer, description="Current user")},
+)
+@extend_schema(
+    summary="Update current user (partial).",
+    request=UserLoggedInSerializer,
+    responses={
+        200: OpenApiResponse(response=UserLoggedInSerializer, description="Profile updated"),
+        400: OpenApiResponse(description="Validation error"),
+    },
+    methods=["PATCH"],
+)
 class UserLoggedInView(generics.RetrieveUpdateAPIView):
     serializer_class = UserLoggedInSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -56,6 +79,22 @@ class UserLoggedInView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
+@extend_schema(
+    description=(
+        "Login with email/password. On success sets JWT cookies "
+        "(`access_token`, `refresh_token`). Body: `{ \"email\": \"...\", \"password\": \"...\" }`."
+    ),
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {"email": {"type": "string", "format": "email"}, "password": {"type": "string"}},
+        }
+    },
+    responses={
+        200: OpenApiResponse(description="Authenticated; JWT cookies set"),
+        401: OpenApiResponse(description="Invalid credentials"),
+    },
+)
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -96,6 +135,11 @@ class LoginView(APIView):
             return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+@extend_schema(
+    summary="Logout: clear JWT cookies (`access_token`, `refresh_token`).",
+    request=None,
+    responses={204: OpenApiResponse(description="Logged out; cookies cleared")},
+)
 class LogoutView(APIView):
      def post(self, request, *args, **kwargs):
         response = Response(status=status.HTTP_204_NO_CONTENT)

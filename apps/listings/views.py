@@ -1,13 +1,13 @@
-from django.db.models.expressions import F
 from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
-from django.db.models import Q
-from rest_framework.permissions import DjangoModelPermissions, AllowAny, BasePermission, SAFE_METHODS
+from rest_framework.decorators import action
+from django.db.models.functions import Coalesce
+from django.db.models import Q, F
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, OpenApiResponse, OpenApiExample
 
-# from ..core.permissions import ListingChangeDeletePermission, ListingCreatePermission
 from ..core.enums import StatusBooking
 from ..bookings.models import Booking
 from ..core.permissions import ListingCreatePermission, ListingChangeDeletePermission
@@ -15,15 +15,31 @@ from ..core.roles import is_renter, is_moderator, is_admin, is_lessor
 from .models import Listing
 from .serializers import ListingSerializer
 from .filters import ListingFilter
-from ..statistics.models import ListingView, ListingStats
+from ..statistics.models import ListingView, ListingStats, SearchQuery, SearchQueryStats
 
 
-class IsOwnerOrReadOnly(BasePermission):
-    def has_object_permission(self, request, view, obj):
-        if request.method in SAFE_METHODS:
-            return True
-        return request.user.is_authenticated and obj.owner_id == request.user.id
+def user_can_toggle(user):
+    return user.has_perm("listings.toggle_active_listing") or is_admin(user)
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter("search", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                         description="Full-text search in title/description"),
+        OpenApiParameter("price_min", OpenApiTypes.INT, OpenApiParameter.QUERY),
+        OpenApiParameter("price_max", OpenApiTypes.INT, OpenApiParameter.QUERY),
+        OpenApiParameter("rooms_min", OpenApiTypes.INT, OpenApiParameter.QUERY),
+        OpenApiParameter("rooms_max", OpenApiTypes.INT, OpenApiParameter.QUERY),
+        OpenApiParameter("guests", OpenApiTypes.INT, OpenApiParameter.QUERY),
+        OpenApiParameter("baby_cribs", OpenApiTypes.INT, OpenApiParameter.QUERY),
+        OpenApiParameter("has_kitchen", OpenApiTypes.BOOL, OpenApiParameter.QUERY),
+        OpenApiParameter("parking_available", OpenApiTypes.BOOL, OpenApiParameter.QUERY),
+        OpenApiParameter("pets_possible", OpenApiTypes.BOOL, OpenApiParameter.QUERY),
+        OpenApiParameter("ordering", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                         description="Sort fields. Ex: price,-created_at"),
+        OpenApiParameter("all", OpenApiTypes.BOOL, OpenApiParameter.QUERY,
+                         description="For lessor: show active + own inactive"),
+    ]
+)
 class ListingViewSet(viewsets.ModelViewSet):
     queryset = Listing.objects.all().select_related("owner")
     serializer_class = ListingSerializer
@@ -32,29 +48,11 @@ class ListingViewSet(viewsets.ModelViewSet):
     filterset_class = ListingFilter
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter,]
     search_fields = ["title", "description"]
-    ordering_fields = ["price", "created_at", "rooms"]
+    ordering_fields = ["price", "created_at", "rooms", "popularity"]
     ordering = ["-created_at"]
 
     def get_permissions(self):
         """Access rights depending on the action being performed (HTTP methods)."""
-        # if self.action in ["create"]: # for POST
-        #     return [IsLessor()]
-        #
-        # if self.action in ["update", "partial_update", "destroy"]: # for PUT/PATCH/DELETE
-        #     return [IsOwnerOrReadOnly()]
-        #
-        # return super().get_permissions() # for LIST/RETRIEVE
-
-        # if self.action in ("list", "retrieve"):
-        #     return [AllowAny()]
-        # perms = [DjangoModelPermissions()]
-        # if self.action in ("update", "partial_update", "destroy"):
-        #     perms.append(IsOwnerOrReadOnly())
-        # if self.action in ["create"]:  # for POST
-        #   return [IsLessor()]
-        #
-        # return perms
-
         if self.action == "create": # for POST
             return [ListingCreatePermission()]
 
@@ -73,7 +71,17 @@ class ListingViewSet(viewsets.ModelViewSet):
         Everyone sees only the ACTIVE status. The owner sees their own and INACTIVE statuses.
         :return:
         """
-        queryset = super().get_queryset().select_related("owner")
+        queryset = super().get_queryset().select_related("owner").prefetch_related("listing_stats")
+        # "popularity" - sort by reviews_count DESC
+        if self.request.query_params.get("ordering") in ("popularity", "-popularity"):
+            desc = self.request.query_params["ordering"].startswith("-")
+            queryset = queryset.annotate(
+                views=Coalesce(F("stats__views_count"), 0),
+                reviews=Coalesce(F("stats__reviews_count"), 0),
+                popularity=F("views") * 2 + F("reviews") * 4
+            )
+            return queryset.order_by("-popularity" if desc else "popularity")
+
         user = self.request.user
         # anonymous/RENTER: active only
         if not user.is_authenticated or is_renter(user):
@@ -92,26 +100,7 @@ class ListingViewSet(viewsets.ModelViewSet):
 
         # default: only active
         return queryset.filter(is_active=True)
-        ###
-        # # anonymous/RENTER: active only
-        # if not user.is_authenticated or user.role == Roles.RENTER:
-        #     return queryset.filter(is_active=True)
-        # # ADMIN: all
-        # if user.role == Roles.ADMIN:
-        #     return queryset
-        # # LESSOR
-        #
-        # if user.role == Roles.LESSOR:
-        #     # ?all=true — all active listings and your own inactive ones
-        #     all = self.request.query_params.get("all", "").lower()
-        #     if all in ["1", "true", "yes"]:
-        #         # all active and your inactive
-        #         return queryset.filter(Q(is_active=True) | Q(owner_id=user.id, is_active=False))
-        #     # only all of your own (any activity)
-        #     return queryset.filter(owner_id=user.id)
-        #
-        # # default: only active
-        # return queryset.filter(is_active=True)
+
 
     def retrieve(self, request, *args, **kwargs):
         """Statistics: making a view counter increment"""
@@ -122,19 +111,50 @@ class ListingViewSet(viewsets.ModelViewSet):
             user=request.user if (request.user and request.user.is_authenticated) else None,
             session_id=session_id or "")
         stats, _ = ListingStats.objects.get_or_create(listing=instance)
-        print('stats', stats)
         ListingStats.objects.filter(listing=instance).update(views_count=F("views_count") + 1)
 
         return super().retrieve(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
         """Statistics: saves search history"""
-        keywords = request.query_params.get("search", "")
-        print(request.query_params)
-        # params ...
+        queryset = request.query_params
+        params = dict(queryset)
+        # keywords
+        keywords = queryset.get("search", "").strip()[:255]
+        # remove unnecessary words from search parameters
+        params.pop("page", None)
+        params.pop("ordering", None)
+        # cutting out keywords from parameters
+        params.pop("search", None)
+        if keywords or params:
+            user = request.user if request.user.is_authenticated else None
+            # save the session id
+            session_id = ""
+            session = getattr(request, "session", None)
+            if session is not None:
+                # create session_key
+                session_id = session.session_key or ""
+                if not session_id:
+                    session.save()  # session.create()
+                    session_id = session.session_key or ""
+            # Search history
+            SearchQuery.objects.create(user=user, session_id=session_id, keywords=keywords, params=params,)
+            # Aggregated statistics by keywords
+            if keywords:
+                obj, created = SearchQueryStats.objects.get_or_create(keywords=keywords, defaults={"count": 1},)
+                if not created:
+                    SearchQueryStats.objects.filter(pk=obj.pk).update(count=F("count") + 1)
 
         return super().list(request, *args, **kwargs)
 
+    @extend_schema(
+        summary="Listing full update. The owner of your listing or admin. ",
+        responses={
+            200: OpenApiResponse(description="Updated"),
+            400: OpenApiResponse(description="Blocked by open cancel window of an approved booking"),
+            403: OpenApiResponse(description="Forbidden"),
+        },
+    )
     def update(self, request, *args, **kwargs):
         """Disable Listing editing after approval (or after the deadline)"""
         listing = self.get_object()
@@ -151,7 +171,6 @@ class ListingViewSet(viewsets.ModelViewSet):
             if now <= booking.get_cancel_deadline():
                 blocking = booking
                 break
-
         if blocking:
             return Response(
                 {
@@ -162,7 +181,6 @@ class ListingViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # else (no approved with open window) — ALLOW editing
         return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
@@ -192,3 +210,49 @@ class ListingViewSet(viewsets.ModelViewSet):
             )
 
         return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Toggle listing status (is_active).\n"
+                    "The owner of your listing or a user with the permission "
+                    "`listings.toggle_active_listing`/admin.\n"
+                    "Can force the value via ?value=true|false.",
+        request=None,
+        responses={
+            200: OpenApiResponse(description="Status updated / No change"),
+            403: OpenApiResponse(description="Forbidden"),
+        },
+        examples=[
+            OpenApiExample("Activated", value={"id": 70, "is_active": True}, response_only=True),
+            OpenApiExample("Deactivated", value={"id": 70, "is_active": False}, response_only=True),
+        ],
+    )
+    @action(detail=True, methods=["POST"], url_path="toggle-status", permission_classes=[permissions.IsAuthenticated])
+    def toggle_status(self, request, pk=None, *args, **kwargs):
+        """
+        Toggle ACTIVE/INACTIVE status (is_active field).
+        Permission: owner (lessor) for their own listing only, or user with the 'listings.toggle_active_listing' perm.
+        Дополнительно можно передать ?value=true|false, чтобы не toggle, а принудительно установить.
+        """
+        listing = self.get_object()
+        user = request.user
+        # permission: owner or listings.toggle_active_listing/admin
+        if not ((is_lessor(user) and listing.owner_id == user.id) or user_can_toggle(user)):
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+        # optional: ?value=true|false
+        value_param = request.query_params.get("value", "").lower()
+        if value_param in {"true", "1", "yes"}:
+            new_value = True
+        elif value_param in {"false", "0", "no"}:
+            new_value = False
+        else:
+            new_value = not listing.is_active
+        # unnecessary update is exclude
+        if listing.is_active == new_value:
+            return Response(
+                {"detail": "No change", "id": listing.id, "is_active": listing.is_active},
+                status=status.HTTP_200_OK
+            )
+
+        listing.is_active = new_value
+        listing.save(update_fields=["is_active"])
+        return Response({"id": listing.id, "is_active": listing.is_active}, status=status.HTTP_200_OK)
