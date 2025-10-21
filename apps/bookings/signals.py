@@ -8,6 +8,36 @@ from ..core.enums import Roles
 from ..core.utils import get_user_email
 from RentalHousing.settings import DEFAULT_FROM_EMAIL
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.db.models import Q
+from django.utils import timezone
+
+from .models import Booking, StatusBooking
+
+@receiver(post_save, sender=Booking)
+def decline_overlapping_pending_on_status_approve(sender, instance: Booking, created, update_fields, **kwargs):
+    """
+    Если текущее бронирование стало APPROVED, все пересекающиеся по датам PENDING-бронирования
+    по этому же listing переводим в DECLINED.
+    Пересечение интервалов: existing.start < current.end  И  existing.end > current.start.
+    """
+    if instance.status != StatusBooking.APPROVED.value:
+        return
+    if not created and update_fields is not None and "status" not in update_fields:
+        return
+
+    # does not take into account old bookings whose check-out has already occurred
+    today = timezone.localdate()
+    # All PENDING for this listing that overlap in dates with the current booking
+    queryset = (Booking.objects
+          .filter(listing=instance.listing, status=StatusBooking.PENDING.value, end_date__gt=today)
+          .filter(Q(start_date__lt=instance.end_date) & Q(end_date__gt=instance.start_date))
+          .exclude(pk=instance.pk))
+    try:
+        queryset.update(status=StatusBooking.DECLINED.value, reason_cancel=f"Auto-declined due to overlap with approved booking {instance.pk}")
+    except Exception:
+        queryset.update(status=StatusBooking.DECLINED.value)
 
 @receiver(post_save, sender=Booking)
 def send_email(sender, instance: Booking, created, update_fields, **kwargs):

@@ -63,10 +63,10 @@ class ReviewInline(admin.TabularInline):
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
     list_display = ("id", "title",
-                    "owner", "city", "price", "span_days_max",
+                    "owner", "city", "price", "span_days_max", "span_days_min",
                     "guests_max", "baby_crib_max", "has_kitchen", "parking_available", "pets_possible",
                     "created_at", "views_count", "reviews_count", "avg_rating")
-    list_filter = ("is_active", "type", "city", "created_at", "baby_crib_max", "has_kitchen", "parking_available")
+    list_filter = ("is_active", "type_housing", "city", "created_at", "baby_crib_max", "has_kitchen", "parking_available")
     search_fields = ("title", "description", "city", "owner__email", "owner__username")
     ordering = ("-created_at",)
     autocomplete_fields = ("owner",)  # AJAX search
@@ -74,9 +74,9 @@ class ListingAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {"fields": ("title", "description")}),
         ("Location", {"fields": ("location", "city", "country")}),
-        ("Details", {"fields": ("price", "rooms", "span_days_max",
+        ("Details", {"fields": ("price", "rooms", "span_days_max", "span_days_min",
                                 "baby_crib_max", "has_kitchen", "parking_available", "pets_possible",
-                                "type", "is_active")}),
+                                "type_housing", "is_active")}),
         ("Statisticss", {"fields": ("views_count", "reviews_count", "avg_rating")}),
         ("Owner", {"fields": ("owner",)}),
         ("Meta", {"fields": ("created_at", "updated_at")}),

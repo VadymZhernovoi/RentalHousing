@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
@@ -25,15 +26,18 @@ def user_can_toggle(user):
     parameters=[
         OpenApiParameter("search", OpenApiTypes.STR, OpenApiParameter.QUERY,
                          description="Full-text search in title/description"),
-        OpenApiParameter("price_min", OpenApiTypes.INT, OpenApiParameter.QUERY),
-        OpenApiParameter("price_max", OpenApiTypes.INT, OpenApiParameter.QUERY),
+        OpenApiParameter("price_min", OpenApiTypes.DECIMAL, OpenApiParameter.QUERY),
+        OpenApiParameter("price_max", OpenApiTypes.DECIMAL, OpenApiParameter.QUERY),
         OpenApiParameter("rooms_min", OpenApiTypes.INT, OpenApiParameter.QUERY),
         OpenApiParameter("rooms_max", OpenApiTypes.INT, OpenApiParameter.QUERY),
         OpenApiParameter("guests", OpenApiTypes.INT, OpenApiParameter.QUERY),
         OpenApiParameter("baby_cribs", OpenApiTypes.INT, OpenApiParameter.QUERY),
-        OpenApiParameter("has_kitchen", OpenApiTypes.BOOL, OpenApiParameter.QUERY),
-        OpenApiParameter("parking_available", OpenApiTypes.BOOL, OpenApiParameter.QUERY),
-        OpenApiParameter("pets_possible", OpenApiTypes.BOOL, OpenApiParameter.QUERY),
+        OpenApiParameter("has_kitchen", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                         description="Kitchen availability: y/n/u"),
+        OpenApiParameter("parking_available", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                         description="Parking availability: y/n/u"),
+        OpenApiParameter("pets_possible", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                         description="Pets possible: y/n/u"),
         OpenApiParameter("ordering", OpenApiTypes.STR, OpenApiParameter.QUERY,
                          description="Sort fields. Ex: price,-created_at"),
         OpenApiParameter("all", OpenApiTypes.BOOL, OpenApiParameter.QUERY,
@@ -147,69 +151,42 @@ class ListingViewSet(viewsets.ModelViewSet):
 
         return super().list(request, *args, **kwargs)
 
+    def _find_blocking_booking(self, listing):
+        """
+        :param listing:
+        :return: A reservation with the APPROVED status, for which the cancellation window has not yet closed,
+        or None if edits are possible.
+        """
+        now = timezone.now()
+        queryset = (Booking.objects
+              .filter(listing=listing, status=StatusBooking.APPROVED.value)
+              .only("id", "start_date", "end_date", "cancel_hours"))
+        for booking in queryset:
+            if now <= booking.get_cancel_deadline():
+                return booking
+        return None
+
+
     @extend_schema(
-        summary="Listing full update. The owner of your listing or admin. ",
+        summary="Listing update. The owner of your listing or admin.",
         responses={
             200: OpenApiResponse(description="Updated"),
             400: OpenApiResponse(description="Blocked by open cancel window of an approved booking"),
             403: OpenApiResponse(description="Forbidden"),
         },
     )
-    def update(self, request, *args, **kwargs):
-        """Disable Listing editing after approval (or after the deadline)"""
-        listing = self.get_object()
-        # APPROVED-bookings for which the cancellation window is still OPEN (editing is prohibited)
-        blocking = None
-        now = timezone.now()
-        queryset = Booking.objects.filter(
-            listing=listing,
-            status=StatusBooking.APPROVED.value
-        ).only("id", "start_date", "end_date", "cancel_hours")
-
-        for booking in queryset:
-            # If the deadline has NOT passed yet, editing is blocked.
-            if now <= booking.get_cancel_deadline():
-                blocking = booking
-                break
+    def perform_update(self, serializer):
+        """ Disable Listing editing after approval (or after the deadline) """
+        listing = serializer.instance  # self.get_object()
+        blocking = self._find_blocking_booking(listing)
         if blocking:
-            return Response(
-                {
-                    "detail": "Listing cannot be edited while an approved booking still has an open cancel window.",
-                    "booking_id": blocking.id,
-                    "cancel_deadline": blocking.get_cancel_deadline().isoformat(),
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError({
+                "detail": "Listing cannot be edited while an approved booking still has an open cancel window.",
+                "booking_id": blocking.id,
+                "cancel_deadline": blocking.get_cancel_deadline().isoformat(),
+            })
+        serializer.save()
 
-        return super().update(request, *args, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-        """Disable Listing editing after approval (or after the deadline)"""
-        listing = self.get_object()
-        # APPROVED-bookings for which the cancellation window is still OPEN (editing is prohibited)
-        blocking = None
-        now = timezone.now()
-        queryset = Booking.objects.filter(
-            listing=listing,
-            status=StatusBooking.APPROVED.value
-        ).only("id", "start_date", "end_date", "cancel_hours")
-
-        for booking in queryset:
-            # If the deadline has NOT passed yet, editing is blocked.
-            if now <= booking.get_cancel_deadline():
-                blocking = booking
-                break
-        if blocking:
-            return Response(
-                {
-                    "detail": "Listing cannot be edited while an approved booking still has an open cancel window.",
-                    "booking_id": blocking.id,
-                    "cancel_deadline": blocking.get_cancel_deadline().isoformat(),
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        return super().partial_update(request, *args, **kwargs)
 
     @extend_schema(
         description="Toggle listing status (is_active).\n"

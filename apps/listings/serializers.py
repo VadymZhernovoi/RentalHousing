@@ -1,12 +1,15 @@
 from rest_framework import serializers
 
 from .models import Listing
+from ..core.enums import Availability
 
 
 class ListingSerializer(serializers.ModelSerializer):
-    # owner_id = serializers.UUIDField(source="owner.id", read_only=True)
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
     owner_id = serializers.ReadOnlyField()
+    has_kitchen = serializers.ChoiceField(choices=Availability.choices, required=False)
+    parking_available = serializers.ChoiceField(choices=Availability.choices, required=False)
+    pets_possible = serializers.ChoiceField(choices=Availability.choices, required=False)
 
     class Meta:
         model = Listing

@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
-from ..core.enums import Types
+from ..core.enums import TypesHousing, Availability
 from ..core.models import TimeStampedModel
 
 class Listing(TimeStampedModel):
@@ -17,18 +17,35 @@ class Listing(TimeStampedModel):
     city = models.CharField(max_length=100, blank=True, verbose_name=_("City"))
     district = models.CharField(max_length=100, blank=True, verbose_name=_("District"))
     country = models.CharField(max_length=2, default="DE", verbose_name=_("Country"))
-    price = models.PositiveIntegerField(default=0, verbose_name=_("Price"))
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name=_("Price"))
     currency = models.CharField(max_length=3, default="EUR", verbose_name=_("Currency"))
     span_days_max = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Max Span Days"))
+    span_days_min = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Min Span Days"))
 
     rooms = models.PositiveSmallIntegerField(default=1, verbose_name=_("Rooms"))
     guests_max = models.PositiveSmallIntegerField(default=0, verbose_name=_("Max Guests"))
     baby_crib_max = models.PositiveSmallIntegerField(default=0, verbose_name=_("Max Baby Cribs"))
-    has_kitchen = models.BooleanField(null=True, blank=True, verbose_name=_("Kitchen Available"))
-    parking_available = models.BooleanField(null=True, blank=True, verbose_name=_("Parking Available"))
-    pets_possible = models.BooleanField(null=True, blank=True, verbose_name=_("Pets Possible"))
+    has_kitchen = models.CharField(
+        max_length=1,
+        choices=Availability.choices,
+        default=Availability.UNKNOWN,
+        verbose_name=_("Kitchen Available"))
+    parking_available = models.CharField(
+        max_length=1,
+        choices=Availability.choices,
+        default=Availability.UNKNOWN,
+        verbose_name=_("Parking Available"))
+    pets_possible = models.CharField(
+        max_length=1,
+        choices=Availability.choices,
+        default=Availability.UNKNOWN,
+        verbose_name=_("Pets Possible"))
 
-    type = models.CharField(max_length=20, choices=Types.choices, default=Types.APARTMENT, verbose_name=_("Type"))
+    type_housing = models.CharField(
+        max_length=20,
+        choices=TypesHousing.choices,
+        default=TypesHousing.APARTMENT,
+        verbose_name=_("Type"))
 
     is_active = models.BooleanField(default=True, verbose_name=_("Is active"))
 
@@ -42,5 +59,4 @@ class Listing(TimeStampedModel):
         ]
 
     def __str__(self):
-        return self.title
-
+        return f"{self.title} ({self.location})"

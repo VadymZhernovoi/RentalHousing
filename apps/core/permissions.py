@@ -2,9 +2,11 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 from .roles import is_lessor, is_moderator, is_admin, is_renter
 
+
 class ListingCreatePermission(BasePermission):
     def has_permission(self, request, view):
         return is_lessor(request.user) or is_admin(request.user)
+
 
 class ListingChangeDeletePermission(BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -13,9 +15,11 @@ class ListingChangeDeletePermission(BasePermission):
         user = request.user
         return is_admin(user) or (is_lessor(user) and obj.owner_id == user.id)
 
+
 class BookingCreatePermission(BasePermission):
     def has_permission(self, request, view):
         return is_renter(request.user) or is_admin(request.user)
+
 
 class BookingChangePermission(BasePermission):
     """Renter can change their own (except approve/decline); moderator/admin — change everything"""
@@ -26,6 +30,7 @@ class BookingChangePermission(BasePermission):
 
         return is_renter(user) and obj.renter_id == user.id
 
+
 class BookingApproveDeclineCompletePermission(BasePermission):
     """Lessor can approve/decline only their own listings. Moderator/Admin — everything"""
     def has_object_permission(self, request, view, obj):
@@ -34,6 +39,7 @@ class BookingApproveDeclineCompletePermission(BasePermission):
             return True
 
         return is_lessor(user) and obj.listing.owner_id == user.id
+
 
 ROLE_PERMS = {
     "renter": [
@@ -69,6 +75,14 @@ ROLE_PERMS = {
 #             return True
 #         owner = getattr(obj, "owner", None) or getattr(obj, "user", None)
 #         return request.user.is_authenticated and (request.user == owner or request.user.role == Roles.ADMIN)
+#
+# def can_be_cancelled_by(self, user) -> bool:
+#     return (
+#             user.is_authenticated
+#             and (user.id == self.renter_id or getattr(user, "role", None) == "admin") # only owner or admin can
+#             and self.status in (StatusBooking.PENDING, StatusBooking.APPROVED)
+#             and self.is_can_be_cancellation()
+#     )
 #
 # class CanCancelBooking(BasePermission):
 #     def has_object_permission(self, request, view, obj):

@@ -31,8 +31,6 @@ DEBUG = env.bool("DEBUG", default=(ENV == "dev"))
 
 SECRET_KEY = env("SECRET_KEY", default="__dev_only_change_me__")
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS",
-                         default=["localhost", "127.0.0.1"] if ENV == "dev" else [])
 
 # Application definition
 INSTALLED_APPS = [
@@ -62,7 +60,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware'
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 # user model
@@ -78,13 +77,22 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PAGINATION_CLASS": "RentalHousing.pagination.DefaultPagination",
     "PAGE_SIZE": 10,
-    # "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=120),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
 
 INSTALLED_APPS += [
     "drf_spectacular",
     "drf_spectacular_sidecar",
 ]
+
 REST_FRAMEWORK.update({
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 })
@@ -120,13 +128,6 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=120),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-}
 
 TEMPLATES = [
     {'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -163,12 +164,10 @@ def mysql_conf():
         }
     except KeyError as e:
         raise RuntimeError(f"DB environment variables not found: {e.args[0]}")
-# DEV: SQLite by default / PROD: DATABASE_URL from env (mysql)
-# if ENV == "prod":
-#     DATABASES = {"default": env.db("DATABASE_URL")}
-# else:
-#     DATABASES = {"default": env.db(default=f"sqlite:///{BASE_DIR/'db.sqlite3'}")}
+
+# ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"] if ENV == "dev" else [])
 if ENV == "prod":
+    ALLOWED_HOSTS = [a_hosts.strip() for a_hosts in os.environ.get("ALLOWED_HOSTS", "").split(",") if a_hosts.strip()]
     DATABASES = {"default": mysql_conf()}
     EMAIL_HOST = 'smtp.gmail.com'
     EMAIL_PORT = 587
@@ -176,6 +175,7 @@ if ENV == "prod":
     EMAIL_HOST_USER = 'your_email@gmail.com'
     EMAIL_HOST_PASSWORD = 'your_password'
 else:
+    ALLOWED_HOSTS = [a_hosts.strip() for a_hosts in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if a_hosts.strip()]
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3",}}
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     DEFAULT_FROM_EMAIL = "no-reply@example.com"
@@ -215,3 +215,12 @@ LOGGING = {
 # Default primary key field type
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+"""
+STATIC_URL = '/static/'
+
+if not DEBUG:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+"""
