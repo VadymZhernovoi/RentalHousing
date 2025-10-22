@@ -213,9 +213,9 @@ LOGGING = {
 }
 
 # Default primary key field type
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+DEFAULT_SPAN_DAYS_MAX = 365
 """
 STATIC_URL = '/static/'
 

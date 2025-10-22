@@ -1,11 +1,11 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from decimal import Decimal, ROUND_HALF_UP
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
 
 from ..listings.models import Listing
-from ..core.enums import StatusBooking, Availability
+from ..core.enums import StatusBooking
 from ..core.models import TimeStampedModel
 from .validators import check_booking_validations
 
@@ -71,10 +71,11 @@ class Booking(TimeStampedModel):
         """Calculates the cost (date, related listing)"""
         nights = max((self.end_date - self.start_date).days, 1 if self.start_date == self.end_date else 0)
         price = getattr(self.listing, "price", 0)
-        return nights * price
+        total = (Decimal(nights) * price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return total
 
     def clean(self):
-        check_booking_validations(self.listing)
+        check_booking_validations(self)
 
     def save(self, *args, **kwargs):
         """Recalculates if this is a creation or dates/listing have changed, or update_fields is not set."""

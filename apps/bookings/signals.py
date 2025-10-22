@@ -18,9 +18,8 @@ from .models import Booking, StatusBooking
 @receiver(post_save, sender=Booking)
 def decline_overlapping_pending_on_status_approve(sender, instance: Booking, created, update_fields, **kwargs):
     """
-    Если текущее бронирование стало APPROVED, все пересекающиеся по датам PENDING-бронирования
-    по этому же listing переводим в DECLINED.
-    Пересечение интервалов: existing.start < current.end  И  existing.end > current.start.
+    If the current booking is APPROVED, all overlapping PENDING bookings in the same listing are moved to DECLINED.
+    Intersection of intervals: existing.start < current.end AND existing.end > current.start.
     """
     if instance.status != StatusBooking.APPROVED.value:
         return

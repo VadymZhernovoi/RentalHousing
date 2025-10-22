@@ -397,7 +397,8 @@ paths:
       - in: query
         name: has_kitchen
         schema:
-          type: boolean
+          type: string
+        description: 'Kitchen availability: y/n/u'
       - in: query
         name: is_active
         schema:
@@ -422,19 +423,23 @@ paths:
       - in: query
         name: parking_available
         schema:
-          type: boolean
+          type: string
+        description: 'Parking availability: y/n/u'
       - in: query
         name: pets_possible
         schema:
-          type: boolean
+          type: string
+        description: 'Pets possible: y/n/u'
       - in: query
         name: price_max
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: price_min
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: rooms_max
         schema:
@@ -449,7 +454,7 @@ paths:
           type: string
         description: Full-text search in title/description
       - in: query
-        name: type
+        name: type_housing
         schema:
           type: string
       tags:
@@ -485,7 +490,8 @@ paths:
       - in: query
         name: has_kitchen
         schema:
-          type: boolean
+          type: string
+        description: 'Kitchen availability: y/n/u'
       - in: query
         name: ordering
         schema:
@@ -494,19 +500,23 @@ paths:
       - in: query
         name: parking_available
         schema:
-          type: boolean
+          type: string
+        description: 'Parking availability: y/n/u'
       - in: query
         name: pets_possible
         schema:
-          type: boolean
+          type: string
+        description: 'Pets possible: y/n/u'
       - in: query
         name: price_max
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: price_min
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: rooms_max
         schema:
@@ -739,7 +749,8 @@ paths:
       - in: query
         name: has_kitchen
         schema:
-          type: boolean
+          type: string
+        description: 'Kitchen availability: y/n/u'
       - in: path
         name: id
         schema:
@@ -754,19 +765,23 @@ paths:
       - in: query
         name: parking_available
         schema:
-          type: boolean
+          type: string
+        description: 'Parking availability: y/n/u'
       - in: query
         name: pets_possible
         schema:
-          type: boolean
+          type: string
+        description: 'Pets possible: y/n/u'
       - in: query
         name: price_max
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: price_min
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: rooms_max
         schema:
@@ -796,8 +811,6 @@ paths:
           description: ''
     put:
       operationId: listings_update
-      description: Disable Listing editing after approval (or after the deadline)
-      summary: 'Listing full update. The owner of your listing or admin. '
       parameters:
       - in: query
         name: all
@@ -815,7 +828,8 @@ paths:
       - in: query
         name: has_kitchen
         schema:
-          type: boolean
+          type: string
+        description: 'Kitchen availability: y/n/u'
       - in: path
         name: id
         schema:
@@ -830,19 +844,23 @@ paths:
       - in: query
         name: parking_available
         schema:
-          type: boolean
+          type: string
+        description: 'Parking availability: y/n/u'
       - in: query
         name: pets_possible
         schema:
-          type: boolean
+          type: string
+        description: 'Pets possible: y/n/u'
       - in: query
         name: price_max
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: price_min
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: rooms_max
         schema:
@@ -876,14 +894,13 @@ paths:
         jwtCookieAuth: []
       responses:
         '200':
-          description: Updated
-        '400':
-          description: Blocked by open cancel window of an approved booking
-        '403':
-          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+          description: ''
     patch:
       operationId: listings_partial_update
-      description: Disable Listing editing after approval (or after the deadline)
       parameters:
       - in: query
         name: all
@@ -901,7 +918,8 @@ paths:
       - in: query
         name: has_kitchen
         schema:
-          type: boolean
+          type: string
+        description: 'Kitchen availability: y/n/u'
       - in: path
         name: id
         schema:
@@ -916,19 +934,23 @@ paths:
       - in: query
         name: parking_available
         schema:
-          type: boolean
+          type: string
+        description: 'Parking availability: y/n/u'
       - in: query
         name: pets_possible
         schema:
-          type: boolean
+          type: string
+        description: 'Pets possible: y/n/u'
       - in: query
         name: price_max
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: price_min
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: rooms_max
         schema:
@@ -985,7 +1007,8 @@ paths:
       - in: query
         name: has_kitchen
         schema:
-          type: boolean
+          type: string
+        description: 'Kitchen availability: y/n/u'
       - in: path
         name: id
         schema:
@@ -1000,19 +1023,23 @@ paths:
       - in: query
         name: parking_available
         schema:
-          type: boolean
+          type: string
+        description: 'Parking availability: y/n/u'
       - in: query
         name: pets_possible
         schema:
-          type: boolean
+          type: string
+        description: 'Pets possible: y/n/u'
       - in: query
         name: price_max
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: price_min
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: rooms_max
         schema:
@@ -1059,7 +1086,8 @@ paths:
       - in: query
         name: has_kitchen
         schema:
-          type: boolean
+          type: string
+        description: 'Kitchen availability: y/n/u'
       - in: path
         name: id
         schema:
@@ -1074,19 +1102,23 @@ paths:
       - in: query
         name: parking_available
         schema:
-          type: boolean
+          type: string
+        description: 'Parking availability: y/n/u'
       - in: query
         name: pets_possible
         schema:
-          type: boolean
+          type: string
+        description: 'Pets possible: y/n/u'
       - in: query
         name: price_max
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: price_min
         schema:
-          type: integer
+          type: number
+          format: double
       - in: query
         name: rooms_max
         schema:
@@ -1758,6 +1790,39 @@ components:
         owner_id:
           type: integer
           readOnly: true
+        has_kitchen:
+          enum:
+          - u
+          - y
+          - n
+          type: string
+          description: |-
+            * `u` - Unknown
+            * `y` - Yes
+            * `n` - No
+          x-spec-enum-id: 1555ba64764bbac7
+        parking_available:
+          enum:
+          - u
+          - y
+          - n
+          type: string
+          description: |-
+            * `u` - Unknown
+            * `y` - Yes
+            * `n` - No
+          x-spec-enum-id: 1555ba64764bbac7
+        pets_possible:
+          enum:
+          - u
+          - y
+          - n
+          type: string
+          description: |-
+            * `u` - Unknown
+            * `y` - Yes
+            * `n` - No
+          x-spec-enum-id: 1555ba64764bbac7
         created_at:
           type: string
           format: date-time
@@ -1784,10 +1849,9 @@ components:
           type: string
           maxLength: 2
         price:
-          type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         currency:
           type: string
           maxLength: 3
@@ -1798,6 +1862,13 @@ components:
           format: int64
           nullable: true
           title: Max Span Days
+        span_days_min:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          title: Min Span Days
         rooms:
           type: integer
           maximum: 9223372036854775807
@@ -1815,17 +1886,7 @@ components:
           minimum: 0
           format: int64
           title: Max Baby Cribs
-        has_kitchen:
-          type: boolean
-          nullable: true
-          title: Kitchen Available
-        parking_available:
-          type: boolean
-          nullable: true
-        pets_possible:
-          type: boolean
-          nullable: true
-        type:
+        type_housing:
           enum:
           - villa
           - house
@@ -1837,13 +1898,14 @@ components:
           type: string
           description: |-
             * `villa` - Villa
-            * `house` - House
+            * `house` - ouse
             * `apartment` - Apartment
             * `penthouse` - Penthouse
             * `studio` - Studio
             * `room` - Room
             * `other` - Other
-          x-spec-enum-id: 7579bcf243b9b2d3
+          x-spec-enum-id: 18a16cd4a0a4c272
+          title: Type
         is_active:
           type: boolean
       required:
@@ -1857,6 +1919,39 @@ components:
     ListingRequest:
       type: object
       properties:
+        has_kitchen:
+          enum:
+          - u
+          - y
+          - n
+          type: string
+          description: |-
+            * `u` - Unknown
+            * `y` - Yes
+            * `n` - No
+          x-spec-enum-id: 1555ba64764bbac7
+        parking_available:
+          enum:
+          - u
+          - y
+          - n
+          type: string
+          description: |-
+            * `u` - Unknown
+            * `y` - Yes
+            * `n` - No
+          x-spec-enum-id: 1555ba64764bbac7
+        pets_possible:
+          enum:
+          - u
+          - y
+          - n
+          type: string
+          description: |-
+            * `u` - Unknown
+            * `y` - Yes
+            * `n` - No
+          x-spec-enum-id: 1555ba64764bbac7
         title:
           type: string
           minLength: 1
@@ -1878,10 +1973,9 @@ components:
           minLength: 1
           maxLength: 2
         price:
-          type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         currency:
           type: string
           minLength: 1
@@ -1893,6 +1987,13 @@ components:
           format: int64
           nullable: true
           title: Max Span Days
+        span_days_min:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          title: Min Span Days
         rooms:
           type: integer
           maximum: 9223372036854775807
@@ -1910,17 +2011,7 @@ components:
           minimum: 0
           format: int64
           title: Max Baby Cribs
-        has_kitchen:
-          type: boolean
-          nullable: true
-          title: Kitchen Available
-        parking_available:
-          type: boolean
-          nullable: true
-        pets_possible:
-          type: boolean
-          nullable: true
-        type:
+        type_housing:
           enum:
           - villa
           - house
@@ -1932,13 +2023,14 @@ components:
           type: string
           description: |-
             * `villa` - Villa
-            * `house` - House
+            * `house` - ouse
             * `apartment` - Apartment
             * `penthouse` - Penthouse
             * `studio` - Studio
             * `room` - Room
             * `other` - Other
-          x-spec-enum-id: 7579bcf243b9b2d3
+          x-spec-enum-id: 18a16cd4a0a4c272
+          title: Type
         is_active:
           type: boolean
       required:
@@ -2091,6 +2183,39 @@ components:
     PatchedListingRequest:
       type: object
       properties:
+        has_kitchen:
+          enum:
+          - u
+          - y
+          - n
+          type: string
+          description: |-
+            * `u` - Unknown
+            * `y` - Yes
+            * `n` - No
+          x-spec-enum-id: 1555ba64764bbac7
+        parking_available:
+          enum:
+          - u
+          - y
+          - n
+          type: string
+          description: |-
+            * `u` - Unknown
+            * `y` - Yes
+            * `n` - No
+          x-spec-enum-id: 1555ba64764bbac7
+        pets_possible:
+          enum:
+          - u
+          - y
+          - n
+          type: string
+          description: |-
+            * `u` - Unknown
+            * `y` - Yes
+            * `n` - No
+          x-spec-enum-id: 1555ba64764bbac7
         title:
           type: string
           minLength: 1
@@ -2112,10 +2237,9 @@ components:
           minLength: 1
           maxLength: 2
         price:
-          type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         currency:
           type: string
           minLength: 1
@@ -2127,6 +2251,13 @@ components:
           format: int64
           nullable: true
           title: Max Span Days
+        span_days_min:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          title: Min Span Days
         rooms:
           type: integer
           maximum: 9223372036854775807
@@ -2144,17 +2275,7 @@ components:
           minimum: 0
           format: int64
           title: Max Baby Cribs
-        has_kitchen:
-          type: boolean
-          nullable: true
-          title: Kitchen Available
-        parking_available:
-          type: boolean
-          nullable: true
-        pets_possible:
-          type: boolean
-          nullable: true
-        type:
+        type_housing:
           enum:
           - villa
           - house
@@ -2166,13 +2287,14 @@ components:
           type: string
           description: |-
             * `villa` - Villa
-            * `house` - House
+            * `house` - ouse
             * `apartment` - Apartment
             * `penthouse` - Penthouse
             * `studio` - Studio
             * `room` - Room
             * `other` - Other
-          x-spec-enum-id: 7579bcf243b9b2d3
+          x-spec-enum-id: 18a16cd4a0a4c272
+          title: Type
         is_active:
           type: boolean
     RegisterUserRequest:
