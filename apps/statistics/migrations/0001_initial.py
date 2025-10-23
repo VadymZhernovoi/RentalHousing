@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('listings', '0013_alter_listing_has_kitchen_and_more'),
+        #('listings', '0013_alter_listing_has_kitchen_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

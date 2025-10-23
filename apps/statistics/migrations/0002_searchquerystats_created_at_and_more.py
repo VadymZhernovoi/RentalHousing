@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('listings', '0015_alter_listing_baby_crib_max_alter_listing_guests_max_and_more'),
+        #('listings', '0015_alter_listing_baby_cribs_max_alter_listing_guests_max_and_more'),
         ('statistics', '0001_initial'),
     ]
 

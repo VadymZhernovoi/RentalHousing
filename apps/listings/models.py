@@ -14,7 +14,7 @@ class Listing(TimeStampedModel):
     title = models.CharField(max_length=120, verbose_name=_("Title"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
     location = models.CharField(max_length=255, verbose_name=_("Location"))
-    city = models.CharField(max_length=100, blank=True, verbose_name=_("City"))
+    city = models.CharField(max_length=100, verbose_name=_("City"))
     district = models.CharField(max_length=100, blank=True, verbose_name=_("District"))
     country = models.CharField(max_length=2, default="DE", verbose_name=_("Country"))
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name=_("Price"))
@@ -24,7 +24,7 @@ class Listing(TimeStampedModel):
 
     rooms = models.PositiveSmallIntegerField(default=1, verbose_name=_("Rooms"))
     guests_max = models.PositiveSmallIntegerField(default=0, verbose_name=_("Max Guests"))
-    baby_crib_max = models.PositiveSmallIntegerField(default=0, verbose_name=_("Max Baby Cribs"))
+    baby_cribs_max = models.PositiveSmallIntegerField(default=0, verbose_name=_("Max Baby Cribs"))
     has_kitchen = models.CharField(
         max_length=1,
         choices=Availability.choices,
@@ -48,6 +48,8 @@ class Listing(TimeStampedModel):
         verbose_name=_("Type"))
 
     is_active = models.BooleanField(default=True, verbose_name=_("Is active"))
+
+    constraints = [models.UniqueConstraint(fields=["owner", "city", "location"], name="uniq_owner_city_location",),]
 
     class Meta:
         verbose_name = 'Listing'

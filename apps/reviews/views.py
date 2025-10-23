@@ -71,7 +71,7 @@ class ReviewListCreateView(mixins.ListModelMixin, mixins.CreateModelMixin, views
 
         # ?my=true — only my reviews
         my = self.request.query_params.get("my", "").lower()
-        if my in ["1", "true", "yes"]:
+        if my in ["1", "true", "yes", "y"]:
             if self.request.user.is_authenticated:
                 queryset = queryset.filter(author=self.request.user)
             else:
@@ -111,7 +111,7 @@ class ReviewListCreateView(mixins.ListModelMixin, mixins.CreateModelMixin, views
         if not (request.user.has_perm("reviews.moderate_review") or is_admin(request.user)):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         review = self.get_object()
-        review.is_valid = bool(str(request.data.get("is_valid", "true")).lower() in {"1", "true", "yes"})
+        review.is_valid = bool(str(request.data.get("is_valid", "true")).lower() in {"1", "true", "yes", "y"})
         review.save(update_fields=["is_valid"])
 
         return Response({"id": review.id, "is_valid": review.is_valid})

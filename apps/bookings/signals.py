@@ -1,19 +1,26 @@
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.core.mail import send_mail
-from django.conf import settings
-
-from .models import Booking
-from ..core.enums import Roles
-from ..core.utils import get_user_email
-from RentalHousing.settings import DEFAULT_FROM_EMAIL
-
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.db.models import Q
 from django.utils import timezone
 
+from ..core.enums import Roles
+from ..core.utils import get_user_email
 from .models import Booking, StatusBooking
+from ..core.mails import send_safe_mail
+
+@receiver(pre_save, sender=Booking)
+def task_pre_save_capture_old_status(sender, instance: Booking, **kwargs):
+    """
+    Before saving, we read its previous status from the database and put it in _old_status
+    """
+    if instance.pk:
+        try:
+            old = Booking.objects.get(pk=instance.pk)
+            instance._old_status = old.status
+        except Booking.DoesNotExist:
+            instance._old_status = None
+    else:
+        instance._old_status = None
 
 @receiver(post_save, sender=Booking)
 def decline_overlapping_pending_on_status_approve(sender, instance: Booking, created, update_fields, **kwargs):
@@ -39,7 +46,7 @@ def decline_overlapping_pending_on_status_approve(sender, instance: Booking, cre
         queryset.update(status=StatusBooking.DECLINED.value)
 
 @receiver(post_save, sender=Booking)
-def send_email(sender, instance: Booking, created, update_fields, **kwargs):
+def send_email_to(sender, instance: Booking, created, update_fields, **kwargs):
     """Sends an email to the Booking owner and booking renter."""
     to_renter_email = get_user_email(instance, Roles.RENTER)
     to_lessor_email = get_user_email(instance, Roles.LESSOR)
@@ -51,24 +58,16 @@ def send_email(sender, instance: Booking, created, update_fields, **kwargs):
                        f"from {instance.start_date.isoformat()} to {instance.end_date.isoformat()} "
                        f"(total cost: {instance.total_cost}) has been created.")
         else:
-            subject_to_renter = subject_to_lessor = f"Booking has been changed."
+            old_status = getattr(instance, "_old_status", None)
+            new_status = instance.status
+            subject_to_renter = subject_to_lessor = \
+                f"The reservation status changed from '{old_status}' to '{new_status}'" if new_status != old_status \
+                    else "Booking has been changed."
             message = (f"Booking {instance.listing.title}  has been changed (ID: {instance.id}). \n"
                        f"Current state: from {instance.start_date.isoformat()} to {instance.end_date.isoformat()}, "
                        f"total cost: {instance.total_cost}, status: {instance.status}.")
         if to_renter_email:
-            send_mail(
-                subject_to_renter,
-                message,
-                getattr(settings, "DEFAULT_FROM_EMAIL", DEFAULT_FROM_EMAIL),
-                [to_renter_email],
-                fail_silently=True,
-            )
+            _ = send_safe_mail(subject_to_renter, message, to_renter_email)
         if to_lessor_email:
-            send_mail(
-                subject_to_lessor,
-                message,
-                getattr(settings, "DEFAULT_FROM_EMAIL", DEFAULT_FROM_EMAIL),
-                [to_lessor_email],
-                fail_silently=True,
-            )
+            _ = send_safe_mail(subject_to_lessor, message, to_lessor_email)
 

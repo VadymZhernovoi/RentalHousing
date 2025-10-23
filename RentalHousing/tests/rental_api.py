@@ -2,7 +2,7 @@ import requests
 from faker import Faker
 import random
 
-from apps.core.enums import Types
+from apps.core.enums import TypesHousing, Availability
 
 fake = Faker()
 
@@ -40,14 +40,22 @@ class RentalApi:
         return resp  # вернём Response, чтобы можно было проверять 200/403/404
 
 
-    def _auth_headers(self):
-        assert self.access, "Call login() first to set access token"
-        return {"Authorization": f"Bearer {self.access}"}
+    # def _auth_headers(self):
+    #     assert self.access, "Call login() first to set access token"
+    #     return {"Authorization": f"Bearer {self.access}"}
 
 
     # LISTINGS
-    def create_listing(self, owner, title: str, is_active: bool = True):
+    def create_listing(self, owner, title: str, is_active: bool = True, **kwargs):
         """Create an listing (lessor/admin required)."""
+        guests_max = kwargs.get("guests_max", random.randint(1, 10))
+        baby_cribs_max = kwargs.get("baby_cribs_max", random.randint(1, 3))
+        has_kitchen = kwargs.get("has_kitchen", random.choice(Availability.values))
+        parking_available = kwargs.get("parking_available", random.choice(Availability.values))
+        pets_possible = kwargs.get("pets_possible", random.choice(Availability.values))
+        span_days_max = kwargs.get("span_days_max", random.randint(8, 90))
+        span_days_min = kwargs.get("span_days_min", random.randint(0, 7))
+
         city = fake.city()
         street = fake.street_name()
         payload = {
@@ -57,9 +65,16 @@ class RentalApi:
             "location": f"{city}, {street}",
             "city": city,
             "country": "DE",
-            "price": random.randint(300, 50_000),
+            "price": random.randint(50, 5_000),
             "rooms": random.randint(1, 20),
-            "type": random.choice(Types.values),
+            "span_days_max": span_days_max,
+            "span_days_min": span_days_min,
+            "guests_max": guests_max,
+            "baby_cribs_max": baby_cribs_max,
+            "has_kitchen": has_kitchen,
+            "parking_available": parking_available,
+            "pets_possible": pets_possible,
+            "type": random.choice(TypesHousing.values),
             "is_active": is_active,
         }
         resp = self.sess.post(f"{self.base_url}/listings/", json=payload)
@@ -77,29 +92,19 @@ class RentalApi:
     # BOOKINGS
     def create_booking(self, payload: dict):
         """Create booking (renter). payload: listing, start_date, end_date, guests"""
-        resp = self.sess.post(
-            f"{self.base_url}/bookings/",
-            json=payload,
-            headers=self._auth_headers(),
-        )
-        assert resp.status_code in (200, 201), resp.text
-        return resp.json()
+        resp = self.sess.post(f"{self.base_url}/bookings/",json=payload)
+        # assert resp.status_code in (200, 201), resp.text
+        return resp.json(), resp.status_code
 
     def approve_booking(self, booking_id):
         """Confirm booking (lessor - listing owner)."""
-        resp = self.sess.post(
-            f"{self.base_url}/bookings/{booking_id}/approve/",
-            headers=self._auth_headers(),
-        )
+        resp = self.sess.post(f"{self.base_url}/bookings/{booking_id}/approve/")
         assert resp.status_code == 200, resp.text
         return resp.json()
 
     def decline_booking(self, booking_id):
         """Decline booking (lessor - listing owner)."""
-        resp = self.sess.post(
-            f"{self.base_url}/bookings/{booking_id}/decline/",
-            headers=self._auth_headers(),
-        )
+        resp = self.sess.post(f"{self.base_url}/bookings/{booking_id}/decline/" )
         assert resp.status_code == 200, resp.text
         return resp.json()
 
@@ -113,17 +118,14 @@ class RentalApi:
         return resp  # Let's return a Response to differentiate between 200/403/404
 
     def cancel_booking(self, booking_id):
-        resp = self.sess.post(f"{self.base_url}/bookings/{booking_id}/cancel/")
+        resp = self.sess.post(f"{self.base_url}/bookings/{booking_id}/cancelled/")
         return resp
 
     # REVIEWS
     def create_review(self, booking_id, rating: int, comment: str):
         payload = {"booking": str(booking_id), "rating": rating, "comment": comment}
         resp = self.sess.post(
-            f"{self.base_url}/reviews/",
-            json=payload,
-            headers=self._auth_headers(),
-        )
+            f"{self.base_url}/reviews/",json=payload)
         assert resp.status_code in (200, 201, 400), resp.text
         return resp.json()
 

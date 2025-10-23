@@ -9,9 +9,9 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-        ('listings', '0001_initial'),
-    ]
+    # dependencies = [
+    #     ('listings', '0001_initial'),
+    # ]
 
     operations = [
         migrations.CreateModel(

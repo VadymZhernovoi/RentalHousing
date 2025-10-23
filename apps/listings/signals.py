@@ -10,6 +10,7 @@ from ..reviews.models import Review
 from ..core.enums import Roles
 from ..core.utils import get_user_email
 from RentalHousing.settings import DEFAULT_FROM_EMAIL
+from ..core.mails import send_safe_mail
 
 @receiver(pre_save, sender=Listing)
 def listing_pre_save_capture_old_status(sender, instance: Listing, **kwargs):
@@ -26,12 +27,10 @@ def listing_pre_save_capture_old_status(sender, instance: Listing, **kwargs):
         instance._old_status = None
 
 @receiver(post_save, sender=Listing)
-def send_email_and_recalc_total_cost_bookings_on_change(sender, instance: Listing, created, update_fields, **kwargs):
+def send_email_bookings_on_change(sender, instance: Listing, created, update_fields, **kwargs):
     """
     Sends an email to the listing owner
-    Recalculates total_cost if the price changes (only PENDING)
     """
-
     to_email = get_user_email(instance, Roles.LESSOR)
     if to_email:
         if created:
@@ -43,13 +42,14 @@ def send_email_and_recalc_total_cost_bookings_on_change(sender, instance: Listin
             old_status = getattr(instance, "_old_status", None)
             if instance.is_active != old_status:
                 message += f" New status is {'"INACTIVE"' if instance.is_active else '"ACTIVE"'}."
-        send_mail(
-            subject,
-            message,
-            getattr(settings, "DEFAULT_FROM_EMAIL", DEFAULT_FROM_EMAIL),
-            [to_email],
-            fail_silently=True,
-        )
+
+        _ = send_safe_mail(subject, message, to_email)
+
+@receiver(post_save, sender=Listing)
+def recalc_total_cost_bookings_on_change(sender, instance: Listing, created, update_fields, **kwargs):
+    """
+    Recalculates total_cost if the price changes (only PENDING)
+    """
     if created or update_fields and "price" not in update_fields:
         return
     # Recalculates total_cost if the price changes (only PENDING)
@@ -57,7 +57,6 @@ def send_email_and_recalc_total_cost_bookings_on_change(sender, instance: Listin
     for booking in queryset.only("id", "start_date", "end_date", "total_cost", "listing_id"):
         booking.total_cost = booking.calc_total_cost()
         booking.save(update_fields=["total_cost"])
-
 
 @receiver([post_save, post_delete], sender=Review)
 def update_reviews_count(sender, instance, **kwargs):

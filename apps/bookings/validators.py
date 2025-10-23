@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models.query_utils import Q
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from django.apps import apps
 
 from RentalHousing.settings import DEFAULT_SPAN_DAYS_MAX
@@ -14,11 +14,11 @@ def _BookingModel():
     """Lazy fetching of Booking model without imports."""
     return apps.get_model("bookings", "Booking")
 
-def validate_listing_active(booking: Booking):
+def validate_listing_active(booking: Any):
     if getattr(booking.listing, "is_active", True) is False:
         raise ValidationError({"listing": f"Listing {booking.listing_id} is inactive and cannot be booked."})
 
-def validate_overlap_approved(booking: Booking):
+def validate_overlap_approved(booking: Any):
     """
     Disallow bookings if there is an APPROVED booking for this listing,
     which is not yet closed and has overlapping dates.
@@ -40,7 +40,7 @@ def validate_overlap_approved(booking: Booking):
     if queryset.exists():
         raise ValidationError({"non_field_errors": "Dates overlap with an approved booking that has not finished yet."})
 
-def validate_dates(booking: Booking):
+def validate_dates(booking: Any):
     if booking.end_date <= booking.start_date:
         raise ValidationError(
             {"end_date":
@@ -52,33 +52,33 @@ def validate_dates(booking: Booking):
         raise ValidationError(
             {"start_date": f"The booking start date ({booking.start_date.isoformat()}) must be in the future."})
 
-def validate_guests(booking: Booking):
+def validate_guests(booking: Any):
     guests_max = int(getattr(booking.listing, "guests_max", 0) or 0)
     if 0 < guests_max < booking.guests:
         raise ValidationError({"guests": f"Guests exceed the listing limit (max: {guests_max})."})
 
-def validate_baby_crib(booking: Booking):
-    baby_crib_max = int(getattr(booking.listing, "baby_crib_max", 0) or 0)
-    if 0 < baby_crib_max < booking.baby_cribs:
-        raise ValidationError({"baby_cribs": f"Baby cribs exceed the listing limit (max: {baby_crib_max})."})
+def validate_baby_crib(booking: Any):
+    baby_cribs_max = int(getattr(booking.listing, "baby_cribs_max", 0) or 0)
+    if 0 < baby_cribs_max < booking.baby_cribs:
+        raise ValidationError({"baby_cribs": f"Baby cribs exceed the listing limit (max: {baby_cribs_max})."})
 
-def validate_kitchen(booking: Booking):
+def validate_kitchen(booking: Any):
     from apps.listings.models import Availability
-    if getattr(booking, "kitchen_needed", False) and getattr(booking.listing, "has_kitchen", None) == Availability.NO:
+    if booking.kitchen_needed == Availability.YES and getattr(booking.listing, "has_kitchen", None) == Availability.NO:
         raise ValidationError({"kitchen_needed": "Kitchen is not available for this listing."})
 
-def validate_parking(booking: Booking):
+def validate_parking(booking: Any):
     from apps.listings.models import Availability
-    if (getattr(booking, "parking_needed", False) and
+    if (booking.parking_needed == Availability.YES and
         getattr(booking.listing, "parking_available", None) == Availability.NO):
         raise ValidationError({"parking_needed": "Parking is not available for this listing."})
 
-def validate_pets(booking: Booking):
+def validate_pets(booking: Any):
     from apps.listings.models import Availability
-    if getattr(booking, "pets", False) and getattr(booking.listing, "pets_possible", None) == Availability.NO:
+    if booking.pets == Availability.YES and getattr(booking.listing, "pets_possible", None) == Availability.NO:
         raise ValidationError({"pets": "Pets is not possible for this listing."})
 
-def validate_min_span(booking: Booking):
+def validate_min_span(booking: Any):
     if not booking.start_date or not booking.end_date:
         return
     span = (booking.end_date - booking.start_date).days
@@ -86,7 +86,7 @@ def validate_min_span(booking: Booking):
     if span_days_min > 0 and span < span_days_min:
         raise ValidationError({"span_days": f"Reservation must be at least {span_days_min} nights."})
 
-def validate_max_span(booking: Booking):
+def validate_max_span(booking: Any):
     if not booking.start_date or not booking.end_date:
         return
     span = (booking.end_date - booking.start_date).days
@@ -94,21 +94,21 @@ def validate_max_span(booking: Booking):
     if 0 < span_days_max < span:
         raise ValidationError({"span_days": f"Reservations cannot exceed {span_days_max} nights."})
 
-def validate_owner_not_self(booking: Booking):
+def validate_owner_not_self(booking: Any):
     # The owner cannot reserve his listing
     if (getattr(booking, "renter_id", None) and
         getattr(booking.listing, "owner_id", None) and booking.renter_id == booking.listing.owner_id):
         raise ValidationError({"booking": "Owner cannot book their own listing."})
 
-def validate_guests_positive(booking: Booking):
+def validate_guests_positive(booking: Any):
     if booking.guests is None or booking.guests < 1:
         raise ValidationError({"guests": "Guests must be >= 1."})
 
-def validate_baby_cribs_positive(booking: Booking):
+def validate_baby_cribs_positive(booking: Any):
     if booking.baby_cribs is None or booking.baby_cribs < 0:
         raise ValidationError({"baby_cribs": "Baby cribs must be >= 0."})
     
-def check_booking_validations(booking: Booking):
+def check_booking_validations(booking: Any):
     """All checks."""
     validate_owner_not_self(booking)
     validate_listing_active(booking)

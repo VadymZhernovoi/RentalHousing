@@ -169,6 +169,7 @@ def mysql_conf():
 if ENV == "prod":
     ALLOWED_HOSTS = [a_hosts.strip() for a_hosts in os.environ.get("ALLOWED_HOSTS", "").split(",") if a_hosts.strip()]
     DATABASES = {"default": mysql_conf()}
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # ?
     EMAIL_HOST = 'smtp.gmail.com'
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
@@ -204,12 +205,67 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# LOGGING
+# # LOGGING
+# LOGGING = {
+#     "version": 1,
+#     "disable_existing_loggers": False,
+#     "handlers": {"console": {"class": "logging.StreamHandler"}},
+#     "root": {"handlers": ["console"], "level": "DEBUG" if DEBUG else "INFO"},
+# }
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "root": {"handlers": ["console"], "level": "DEBUG" if DEBUG else "INFO"},
+    "formatters": {
+        "console": {
+            "format": "[%(asctime)s] %(levelname)s [%(name)s] %(lineno)s %(message)s",
+        },
+        "http": {
+            "format": "[%(asctime)s] %(levelname)s %(message)s",
+        },
+        "db": {
+            "format": "[%(asctime)s] SQL: %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "console",
+        },
+        "http_file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "http_logs.log"),
+            "backupCount": 5,
+            "encoding": "utf-8",
+            "formatter": "http",
+        },
+        "db_file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "db_logs.log"),
+            "backupCount": 5,
+            "encoding": "utf-8",
+            "formatter": "db",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["console", "http_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["db_file"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
 }
 
 # Default primary key field type

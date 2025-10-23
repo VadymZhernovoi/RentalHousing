@@ -95,7 +95,7 @@ class ListingViewSet(viewsets.ModelViewSet):
             return queryset
         # LESSOR
         if is_lessor(user):
-            all_flag = self.request.query_params.get("all", "").lower() in {"1", "true", "yes"}
+            all_flag = self.request.query_params.get("all", "").lower() in {"1", "true", "yes", "y"}
             if all_flag:
                 # all active + your own inactive
                 return queryset.filter(Q(is_active=True) | Q(owner_id=user.id, is_active=False))
@@ -217,9 +217,9 @@ class ListingViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         # optional: ?value=true|false
         value_param = request.query_params.get("value", "").lower()
-        if value_param in {"true", "1", "yes"}:
+        if value_param in {"true", "1", "yes", "y"}:
             new_value = True
-        elif value_param in {"false", "0", "no"}:
+        elif value_param in {"false", "0", "no", "n"}:
             new_value = False
         else:
             new_value = not listing.is_active

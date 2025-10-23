@@ -66,7 +66,7 @@ class PopularListingsViewSet(viewsets.ReadOnlyModelViewSet):
             return queryset
         # LESSOR
         if is_lessor(user):
-            all_flag = self.request.query_params.get("all", "").lower() in {"1", "true", "yes"}
+            all_flag = self.request.query_params.get("all", "").lower() in {"1", "true", "yes", "y"}
             if all_flag:
                 # all active + your own inactive
                 return queryset.filter(Q(is_active=True) | Q(owner_id=user.id, is_active=False))

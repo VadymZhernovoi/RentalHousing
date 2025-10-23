@@ -3,7 +3,7 @@ from faker import Faker
 import random
 
 from rental_api import RentalApi
-from apps.core.enums import Roles, Types
+from apps.core.enums import Roles, TypesHousing
 
 BASE_URL = "http://localhost:8000/api/v1"
 EMAIL_LESSOR = "user2@example.com"
@@ -142,7 +142,7 @@ def test_owner_can_put_listing():
         "country": "DE",
         "price": random.randint(300, 50_000),
         "rooms": random.randint(1, 20),
-        "type": random.choice(Types.values),
+        "type": random.choice(TypesHousing.values),
         "is_active": False,
         "owner": created_listing.get("owner") # if owner is passed, it should be ignored (read_only)
     }
@@ -192,7 +192,7 @@ def test_update_forbidden_for_renter():
         "country": "00",
         "price": 100_000,
         "rooms": 99,
-        "type": Types.STUDIO,
+        "type": TypesHousing.STUDIO,
         "is_active": False,
     })
     assert renter_put.status_code in (403, 404)

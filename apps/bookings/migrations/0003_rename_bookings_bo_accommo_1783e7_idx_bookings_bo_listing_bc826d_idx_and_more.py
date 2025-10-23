@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('bookings', '0002_initial'),
-        ('listings', '0003_alter_listing_city_alter_listing_country_and_more'),
+        #('listings', '0003_alter_listing_city_alter_listing_country_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

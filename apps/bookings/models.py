@@ -5,7 +5,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from django.utils.translation import gettext_lazy as _
 
 from ..listings.models import Listing
-from ..core.enums import StatusBooking
+from ..core.enums import StatusBooking, Availability
 from ..core.models import TimeStampedModel
 from .validators import check_booking_validations
 
@@ -29,9 +29,21 @@ class Booking(TimeStampedModel):
 
     guests = models.PositiveIntegerField(default=1, verbose_name=_("Guests"))
     baby_cribs = models.PositiveIntegerField(default=0, verbose_name=_("Baby Cribs"))
-    kitchen_needed = models.BooleanField(default=None, null=True, blank=True, verbose_name=_("Kitchen needed"))
-    parking_needed = models.BooleanField(default=None, null=True, blank=True, verbose_name=_("Parking needed"))
-    pets = models.BooleanField(default=False, null=None, blank=True, verbose_name=_("Pets"))
+    kitchen_needed = models.CharField(
+        max_length=1,
+        choices=Availability.choices,
+        default=Availability.UNKNOWN,
+        verbose_name=_("Kitchen needed"))
+    parking_needed = models.CharField(
+        max_length=1,
+        choices=Availability.choices,
+        default=Availability.UNKNOWN,
+        verbose_name=_("Parking needed"))
+    pets = models.CharField(
+        max_length=1,
+        choices=Availability.choices,
+        default=Availability.UNKNOWN,
+        verbose_name=_("Pets"))
 
     status = models.CharField(
         max_length=10,

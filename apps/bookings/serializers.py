@@ -5,6 +5,10 @@ from ..core.enums import StatusBooking, Availability
 from .validators import check_booking_validations
 
 class BookingCreateUpdateSerializer(serializers.ModelSerializer):
+    kitchen_needed = serializers.ChoiceField(choices=Availability.choices, required=False)
+    parking_needed = serializers.ChoiceField(choices=Availability.choices, required=False)
+    pets = serializers.ChoiceField(choices=Availability.choices, required=False)
+
     class Meta:
         model = Booking
         fields = ("id", "listing", "start_date", "end_date",
@@ -14,7 +18,6 @@ class BookingCreateUpdateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         listing = attrs.get("listing") or getattr(self.instance, "listing", None)
-
         if not listing:
             return attrs
 
