@@ -385,6 +385,5 @@ poetry.toml
 pyrightconfig.json
 
 seed.py
-test_booking.py
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,python,pycharm+all,django

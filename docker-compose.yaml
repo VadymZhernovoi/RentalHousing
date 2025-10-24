@@ -1,0 +1,40 @@
+# version: '3.8'
+services:
+  db:
+    image: mysql
+    container_name: db
+    environment:
+      MYSQL_ROOT_PASSWORD: passw
+    ports:
+      - "6033:3306"
+    volumes:
+      - $HOME/mysql:/var/lib/mysql
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: pma
+    links:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+
+    ports:
+      - 8081:80
+
+    volumes:
+      - ./db:/var/lib/mysql
+
+  web:
+    build:
+      dockerfile: Dockerfile
+    container_name: myproject
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+
+volumes:
+  data_base:

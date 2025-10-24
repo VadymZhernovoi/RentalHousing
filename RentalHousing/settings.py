@@ -165,6 +165,8 @@ def mysql_conf():
     except KeyError as e:
         raise RuntimeError(f"DB environment variables not found: {e.args[0]}")
 
+DEFAULT_FROM_EMAIL = "no-reply@example.com"
+
 # ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"] if ENV == "dev" else [])
 if ENV == "prod":
     ALLOWED_HOSTS = [a_hosts.strip() for a_hosts in os.environ.get("ALLOWED_HOSTS", "").split(",") if a_hosts.strip()]
@@ -179,7 +181,6 @@ else:
     ALLOWED_HOSTS = [a_hosts.strip() for a_hosts in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if a_hosts.strip()]
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3",}}
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    DEFAULT_FROM_EMAIL = "no-reply@example.com"
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
