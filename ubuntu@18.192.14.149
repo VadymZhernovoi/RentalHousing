@@ -1,0 +1,27 @@
+DJANGO_ENV=prod
+#prod
+DEBUG=True
+SECRET_KEY=django-insecure-&py$&d+b+-78yqcsjbwe&x_5)orzr(mss#lf=b%ltu8i1m4zpu
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+
+MYSQL=True
+# MYSQL_HOST="ich-edit.edu.itcareerhub.de"
+# MYSQL_PORT=3306
+# MYSQL_USER="ich1"
+# MYSQL_PASSWORD="ich1_password_ilovedbs"
+# MYSQL_DATABASE="210225_Zhernovoi"
+
+MYSQL_HOST="172.18.0.2"
+MYSQL_PORT=3306
+MYSQL_USER="root"
+MYSQL_PASSWORD="passw"
+MYSQL_DATABASE="RentalHousing"
+
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=true
+EMAIL_HOST_USER=your_email@gmail.com
+EMAIL_HOST_PASSWORD=your_password
+
+# SECRET_KEY=django-insecure-&py$&d+b+-78yqcsjbwe&x_5)orzr(mss#lf=b%ltu8i1m4zpu

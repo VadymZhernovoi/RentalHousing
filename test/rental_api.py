@@ -1,21 +1,26 @@
-import requests
 from typing import Any
+
+import requests
 from faker import Faker
 import random
 from datetime import date, timedelta
 
 from apps.bookings.models import Booking
 from apps.core.enums import TypesHousing, Availability
+from apps.core.users_seed_test import BASE_URL, email_for, EMAIL_ADMIN, PWD_ADMIN
 
 fake = Faker()
 
-# BASE_URL     = "http://localhost:8000/api/v1"  # поправь при необходимости
-# EMAIL_LESSOR = "lessor1@example.com"
-# PWD_LESSOR   = "YourStrongPass1!"
-# EMAIL_RENTER = "renter1@example.com"
-# PWD_RENTER   = "YourStrongPass1!"
-# EMAIL_MOD    = "moderator1@example.com"
-# PWD_MOD      = "YourStrongPass1!"
+def future_time(days=random.randint(3, 5), offset=random.randint(10, 20)):
+    start = date.today() + timedelta(days=offset)
+    end   = start + timedelta(days=days)
+    return str(start), str(end), int(days)
+
+def past_time(days=random.randint(3, 5), offset=random.randint(10, 20)):
+    start = date.today() - timedelta(days=offset)
+    end   = start + timedelta(days=days)
+    return str(start), str(end), days
+
 
 class RentalApi:
     def __init__(self, base_url: str):
@@ -57,8 +62,11 @@ class RentalApi:
 
 
     # LISTINGS
-    def create_listing(self, owner, title: str, is_active: bool = True, **kwargs):
+    def create_listing(self, owner, title=None, is_active: bool = True, **kwargs):
+    # def create_listing(self, owner, is_active: bool = True, **kwargs):
         """Create an listing (lessor/admin required)."""
+        title = f"{fake.word().capitalize()} Apartment" if title is None else title
+        print('\ntitle', title)
         guests_max = kwargs.get("quests_max", random.randint(1, 10))
         baby_cribs_max = kwargs.get("baby_cribs_max", random.randint(1, 3))
         has_kitchen = kwargs.get("has_kitchen", random.choice(Availability.values))
@@ -71,7 +79,8 @@ class RentalApi:
         street = fake.street_name()
         payload = {
             "owner": owner["id"],
-            "title": f"{title} {fake.word().capitalize()}",
+            "title": title,
+            # "title": f"{fake.word().capitalize()} Apartment",
             "description": fake.paragraph(nb_sentences=3),
             "location": f"{city}, {street}",
             "city": city,
@@ -155,33 +164,56 @@ class RentalApi:
         return self.sess.post(f"{self.base_url}/reviews/{review_id}/moderate-validate/",
                               json={"is_valid": is_valid})
 
-# def future_range(days=3, offset=10):
-#     start = date.today() + timedelta(days=offset)
-#     end   = start + timedelta(days=days)
-#     return str(start), str(end)
-#
-# def create_listing_as_lessor(title="API Test Listing", *args, **kwargs) -> RentalApi:
-#     lessor = RentalApi(BASE_URL)
-#     lessor.login(EMAIL_LESSOR, PWD_LESSOR)
-#     user_l = lessor.user()
-#     code, body = lessor.create_listing(user_l, title, True, **kwargs)
-#     assert code in (200, 201), body
-#     return lessor, body["id"]
-#
-# def create_pending_booking(renter_api: RentalApi, listing_id: str, start: str, end: str, **kwargs: Any) -> Booking:
-#     payload = {"listing": str(listing_id), "start_date": start, "end_date": end}
-#     guests = kwargs.get("guests")
-#     if guests is not None:
-#         payload["guests"] = guests
-#     baby_cribs = kwargs.get("baby_cribs")
-#     if baby_cribs is not None:
-#         payload["baby_cribs"] = baby_cribs
-#     for key in ("kitchen_needed", "parking_needed", "pets"):
-#         val = kwargs.get(key)
-#         if val is not None:
-#             payload[key] = val
-#
-#     bk = renter_api.create_booking(payload)
-#     # return bk, status_code
-#     assert bk["status"] in ("pending", "awaiting_payment", "pending"), bk
-#     return bk.get("id", None)
+def create_pending_booking(renter_api: RentalApi, listing_id: str, start: str, end: str, **kwargs: Any) -> Booking:
+    payload = {"listing": str(listing_id), "start_date": start, "end_date": end}
+    guests = kwargs.get("guests")
+    if guests is not None:
+        payload["guests"] = guests
+    baby_cribs = kwargs.get("baby_cribs")
+    if baby_cribs is not None:
+        payload["baby_cribs"] = baby_cribs
+    for key in ("kitchen_needed", "parking_needed", "pets"):
+        val = kwargs.get(key)
+        if val is not None:
+            payload[key] = val
+
+    # resp = renter_api.sess.post(f"{renter_api.base_url}/bookings/", json=payload)
+    # return resp
+
+    bk = renter_api.create_booking(payload)
+    # return bk, status_code
+    assert bk["status"] in ("pending", "awaiting_payment", "pending"), bk
+    return bk.get("id", None)
+
+email_lessor, pwd_lessor = email_for("lessor1")
+email_lessor2, pwd_lessor2 = email_for("lessor2")
+email_renter, pwd_renter = email_for("renter1")
+email_moderator, pwd_moderator = email_for("mod1")
+
+def _login_lessor(email_les=email_lessor):
+    api = RentalApi(BASE_URL)
+    api.login(email_les, pwd_lessor)
+    return api
+
+def _login_renter():
+    api = RentalApi(BASE_URL)
+    api.login(email_renter, pwd_renter)
+    return api
+
+def _login_moderator():
+    api = RentalApi(BASE_URL)
+    api.login(email_moderator, pwd_moderator)
+    return api
+
+def _login_admin():
+    api = RentalApi(BASE_URL)
+    api.login(EMAIL_ADMIN, PWD_ADMIN)
+    return api
+
+def create_listing_as_lessor(title=None, **kwargs) -> RentalApi:
+    lessor = _login_lessor()
+    user_l = lessor.user()
+    code, body = lessor.create_listing(user_l, title, True, **kwargs)
+    assert code in (200, 201), body
+    return lessor, body["id"]
+

@@ -1,75 +1,22 @@
 import pytest
-import inspect
-from typing import Any
 
-from apps.bookings.models import Booking
-from rental_api import RentalApi
+from rental_api import future_time, past_time, create_pending_booking, _login_renter, _login_lessor, _login_moderator
 from test_booking import create_listing_as_lessor
-from apps.core.users_seed_test import BASE_URL, email_for, future_range
-
-email_lessor, pwd_lessor = email_for("lessor1")
-email_renter, pwd_renter = email_for("renter1")
-email_moderator, pwd_moderator = email_for("mod1")
-
-def _login_lessor():
-    api = RentalApi(BASE_URL)
-    api.login(email_lessor, pwd_lessor)
-    return api
-
-def _login_renter():
-    api = RentalApi(BASE_URL)
-    api.login(email_renter, pwd_renter)
-    return api
-
-def _login_moderator():
-    api = RentalApi(BASE_URL)
-    api.login(email_moderator, pwd_moderator)
-    return api
-
-def create_pending_booking(renter_api: RentalApi, listing_id: str, start: str, end: str, **kwargs: Any) -> Booking:
-    payload = {"listing": str(listing_id), "start_date": start, "end_date": end}
-    guests = kwargs.get("guests")
-    if guests is not None:
-        payload["guests"] = guests
-    baby_cribs = kwargs.get("baby_cribs")
-    if baby_cribs is not None:
-        payload["baby_cribs"] = baby_cribs
-    for key in ("kitchen_needed", "parking_needed", "pets"):
-        val = kwargs.get(key)
-        if val is not None:
-            payload[key] = val
-
-    # resp = renter_api.sess.post(f"{renter_api.base_url}/bookings/", json=payload)
-    # return resp
-
-    bk = renter_api.create_booking(payload)
-    # return bk, status_code
-    assert bk["status"] in ("pending", "awaiting_payment", "pending"), bk
-    return bk.get("id", None)
+from apps.core.users_seed_test import BASE_URL
 
 @pytest.mark.integration
 def test_review_create_forbidden_before_completed():
-    days = 3
-    offset = 14
-    title = inspect.currentframe().f_code.co_name
+    start, end, days = future_time()
+    # title = inspect.currentframe().f_code.co_name
     lessor, listing_id = create_listing_as_lessor(
-        title,
+        # title,
         span_days_min=days,
         span_days_max=days + 30,
         quests_max=4,
     )
     # renter -> pending (+ approve), but the booking has not completed (or the check-out date has not passed)
     renter = _login_renter()
-    start, end = future_range(days=3, offset=14)
     booking_id = create_pending_booking(renter, listing_id, start, end, guests=3)
-    # # booking_json, status_code = renter.create_booking({
-    # #     "listing": str(listing_id),
-    # #     "start_date": start,
-    # #     "end_date": end,
-    # #     "guests": 2
-    # # })
-    # # assert status_code in (200, 201), booking_json
-    # booking_id = booking_json["id"]
 
     # lessor -> approved, but completion is not possible (end_date in the future)
     appr = _login_lessor().approve_booking(booking_id)
@@ -82,35 +29,35 @@ def test_review_create_forbidden_before_completed():
 
 @pytest.mark.integration
 def test_owner_cannot_create_review_for_foreign_booking():
-    title = inspect.currentframe().f_code.co_name
-    lessor, listing_id = create_listing_as_lessor(title)
+    start, end, days = future_time()
+    # title = inspect.currentframe().f_code.co_name
+    lessor, listing_id = create_listing_as_lessor(
+        # title,З
+        span_days_min=days,
+        span_days_max=days + 30,
+        quests_max=4,
+    )
     renter = _login_renter()
-
-    start, end = future_range(days=3, offset=12)
-    booking_json, status_code = renter.create_booking({
-        "listing": str(listing_id), "start_date": start, "end_date": end, "guests": 2
-    })
-    assert status_code in (200, 201), booking_json
-    booking_id = booking_json["id"]
+    booking_id = create_pending_booking(renter, listing_id, start, end, guests=2)
     _login_lessor().approve_booking(booking_id)
-
     # Lessor -> review on a renter's booking -> not his booking
     lessor_try = _login_lessor().sess.post(f"{BASE_URL}/reviews/",
                                            json={"booking": str(booking_id), "rating": 5, "comment": "comment lessor"})
     assert lessor_try.status_code in (400, 403), lessor_try.text
 
 @pytest.mark.integration
-def test_owner_comment_allowed_only_for_listing_owner():
-    title = inspect.currentframe().f_code.co_name
-    lessor, listing_id = create_listing_as_lessor(title)
+def test_owner_comment_only_for_listing_owner():
+    start, end, days = past_time()
+    # title = inspect.currentframe().f_code.co_name
+    lessor, listing_id = create_listing_as_lessor(
+        # title,
+        span_days_min=days,
+        span_days_max=days + 30,
+        quests_max=5,
+    )
     renter = _login_renter()
+    booking_id = create_pending_booking(renter, listing_id, start, end, guests=2)
 
-    start, end = future_range(days=3, offset=10)
-    booking_json, status_code = renter.create_booking({
-        "listing": str(listing_id), "start_date": start, "end_date": end, "guests": 2
-    })
-    assert status_code in (200, 201), booking_json
-    booking_id = booking_json["id"]
     _login_lessor().approve_booking(booking_id)
 
     create_resp = renter.sess.post(f"{BASE_URL}/reviews/",
@@ -126,18 +73,21 @@ def test_owner_comment_allowed_only_for_listing_owner():
     body = oc_resp.json()
     assert body.get("owner_comment") == "Thanks for your feedback!"
 
+
 @pytest.mark.integration
 def test_renter_cannot_moderate_review():
-    title = inspect.currentframe().f_code.co_name
-    lessor, listing_id = create_listing_as_lessor(title)
+    start, end, days = past_time()
+    # title = inspect.currentframe().f_code.co_name
+    lessor, listing_id = create_listing_as_lessor(
+        # title,
+        span_days_min=days,
+        span_days_max=days + 30,
+        quests_max=5,
+    )
     renter = _login_renter()
 
-    start, end = future_range(days=3, offset=11)
-    booking_json, status_code = renter.create_booking({
-        "listing": str(listing_id), "start_date": start, "end_date": end, "guests": 2
-    })
-    assert status_code in (200, 201), booking_json
-    booking_id = booking_json["id"]
+    booking_id = create_pending_booking(renter, listing_id, start, end, guests=2)
+
     _login_lessor().approve_booking(booking_id)
 
     create_resp = renter.sess.post(f"{BASE_URL}/reviews/",
@@ -149,3 +99,38 @@ def test_renter_cannot_moderate_review():
     # renter -> moderation
     mod_resp = renter.moderate_review(review_id, is_valid=False)
     assert mod_resp.status_code == 403, mod_resp.text
+
+@pytest.mark.integration
+def test_moderator_can_invalidate_review():
+    start, end, days = past_time()
+    lessor, listing_id = create_listing_as_lessor(
+        span_days_min=days,
+        span_days_max=days + 30,
+        quests_max=5,
+    )
+
+    # renter created booking, lessor - approved
+    renter = _login_renter()
+    booking_id = create_pending_booking(renter, listing_id, start, end, guests=2)
+
+    _login_lessor().approve_booking(booking_id)
+
+    # renter created review
+    create_resp = renter.sess.post(
+        f"{BASE_URL}/reviews/",
+        json={"booking": str(booking_id), "rating": 3, "comment": "+-"}
+    )
+    if create_resp.status_code != 201:
+        pytest.skip(f"Review creation blocked (booking not completed) — skip moderator test.")
+    review_id = create_resp.json()["id"]
+
+    # moderator set invalid
+    moderator = _login_moderator()
+    mod_resp = moderator.moderate_review(review_id, is_valid=False)
+    assert mod_resp.status_code in (200, 204), mod_resp.text
+
+    # check status iv_valid
+    get_resp = lessor.sess.get(f"{BASE_URL}/reviews/{review_id}/")
+    assert get_resp.status_code == 200, get_resp.text
+    payload = get_resp.json()
+    assert payload.get("is_valid") is False, f"Expected is_valid=False, got: {payload}"

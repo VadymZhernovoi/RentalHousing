@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from RentalHousing import settings
 
 USERS = [
     # lessors
@@ -9,9 +9,11 @@ USERS = [
     {"email": "renter2@example.com", "username": "renter2", "first_name": "Renter", "last_name": "Two", "role": "renter"},
     # moderators
     {"email": "moderator1@example.com", "username": "mod1", "first_name": "Mod", "last_name": "One", "role": "moderator"},
+    # admin
+    {"email": "admin@admin.com", "username": "admin", "first_name": "Admin", "last_name": "Adm", "role": "admin"},
 ]
 
-BASE_URL = "http://localhost:8000/api/v1"
+BASE_URL = "http://" + settings.ALLOWED_HOSTS[-1] + ":8000/api/v1" # "http://localhost:8000/api/v1"
 
 DEFAULT_PASSWORD = "SecurePassword1!"
 
@@ -24,7 +26,4 @@ def email_for(username: str) -> str | None:
             return u.get("email"), DEFAULT_PASSWORD
     return None
 
-def future_range(days=3, offset=10):
-    start = date.today() + timedelta(days=offset)
-    end   = start + timedelta(days=days)
-    return str(start), str(end)
+

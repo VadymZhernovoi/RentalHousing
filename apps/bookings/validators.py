@@ -4,6 +4,7 @@ from django.db.models.query_utils import Q
 from typing import TYPE_CHECKING, Any
 from django.apps import apps
 
+from RentalHousing.settings import PAST_TIME_POSSIBLE
 from RentalHousing.settings import DEFAULT_SPAN_DAYS_MAX
 from ..core.enums import StatusBooking
 
@@ -46,11 +47,12 @@ def validate_dates(booking: Any):
             {"end_date":
             f"end_date ({booking.end_date.isoformat()}) must be after start date ({booking.start_date.isoformat()})."}
         )
-
-    today = timezone.localdate()
-    if booking.start_date < today:
-        raise ValidationError(
-            {"start_date": f"The booking start date ({booking.start_date.isoformat()}) must be in the future."})
+    print("\nsettings.PAST_TIME_POSSIBLE", PAST_TIME_POSSIBLE)
+    if not PAST_TIME_POSSIBLE: # to debug the creation of reviews
+        today = timezone.localdate()
+        if booking.start_date < today:
+            raise ValidationError(
+                {"start_date": f"The booking start date ({booking.start_date.isoformat()}) must be in the future."})
 
 def validate_guests(booking: Any):
     guests_max = int(getattr(booking.listing, "guests_max", 0) or 0)

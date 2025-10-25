@@ -13,7 +13,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ("id", "booking", "listing", "rating", "comment", "created_at", "author")
+        fields = ("id", "booking", "listing", "rating", "comment", "created_at", "author", "is_valid")
         read_only_fields = ("created_at", "listing")
 
     def get_fields(self):

@@ -11,28 +11,28 @@ from .models import Review
 from .serializers import ReviewSerializer
 from ..core.permissions import is_admin
 
-@extend_schema(
-    summary="List reviews (filter by `listing`).",
-    request=None,
-    responses={200: OpenApiResponse(response=ReviewSerializer, description="List of reviews (paginated)")},
-)
-class ReviewViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
-    queryset = Review.objects.all().select_related("listing", "booking", "author")
-    serializer_class = ReviewSerializer
-
-    def get_permissions(self):
-        if self.action == "create":
-            return [permissions.IsAuthenticated()]
-
-        return [permissions.AllowAny()]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        listing_id = self.request.query_params.get("listing")
-        if listing_id:
-            queryset = queryset.filter(listing_id=listing_id)
-
-        return queryset.order_by("-created_at")
+# @extend_schema(
+#     summary="List reviews (filter by `listing`).",
+#     request=None,
+#     responses={200: OpenApiResponse(response=ReviewSerializer, description="List of reviews (paginated)")},
+# )
+# class ReviewViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+#     queryset = Review.objects.all().select_related("listing", "booking", "author")
+#     serializer_class = ReviewSerializer
+#
+#     def get_permissions(self):
+#         if self.action == "create":
+#             return [permissions.IsAuthenticated()]
+#
+#         return [permissions.AllowAny()]
+#
+#     def get_queryset(self):
+#         queryset = super().get_queryset()
+#         listing_id = self.request.query_params.get("listing")
+#         if listing_id:
+#             queryset = queryset.filter(listing_id=listing_id)
+#
+#         return queryset.order_by("-created_at")
 
 
 @extend_schema(
@@ -49,7 +49,8 @@ class ReviewViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.Gen
         200: OpenApiResponse(response=ReviewSerializer, description="List of reviews (paginated)"),
     },
 )
-class ReviewListCreateView(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+# class ReviewListCreateView(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+class ReviewListCreateView(viewsets.ModelViewSet):
     """
     GET  /api/reviews/?listing=<uuid>&my=true&ordering=-created_at
     POST /api/reviews/  { booking, rating, comment }   # Listing will be taken from Booking.

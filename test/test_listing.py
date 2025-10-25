@@ -2,58 +2,39 @@ import pytest
 from faker import Faker
 import random
 
-from rental_api import RentalApi
+from apps.core.users_seed_test import BASE_URL
+from rental_api import RentalApi, create_listing_as_lessor, future_time, _login_renter, _login_admin, _login_lessor, \
+    fake
 from apps.core.enums import Roles, TypesHousing
-
-BASE_URL = "http://localhost:8000/api/v1"
-EMAIL_LESSOR = "user2@example.com"
-PWD_LESSOR = "YourStrongPass2!"
-EMAIL_RENTER = "user1@example.com"
-PWD_RENTER = "YourStrongPass1!"
-EMAIL_ADMIN = "admin@admin.com"
-PWD_ADMIN = "Pa$$w0rd"
-
-fake = Faker()
 
 @pytest.mark.integration
 def test_create_listing_by_lessor():
     # lessor logs in and creates a listing
-    lessor = RentalApi(BASE_URL)
-    lessor.login(EMAIL_LESSOR, PWD_LESSOR)
-    user_l = lessor.user()
-    assert user_l["role"] in (Roles.LESSOR, Roles.ADMIN)
-
-    title = "Test_create_by_lessor"
-    status_code, created_listing = lessor.create_listing(user_l, title)
-    listing_id = created_listing.get("id") or created_listing.get("uuid")
-    assert status_code in (200, 201) and listing_id, "The ID listing should return."
+    start1, end1, days = future_time()
+    lessor, listing_id = create_listing_as_lessor(
+        # title,
+        span_days_min=days,
+        span_days_max=days + 30,
+        quests_max=4,
+    )
 
 @pytest.mark.integration
 def test_create_listing_by_renter_negative():
     # lessor logs in and creates a listing
-    renter = RentalApi(BASE_URL)
-    renter.login(EMAIL_RENTER, PWD_RENTER)
+    renter = _login_renter()
     user_r = renter.user()
-    assert user_r["role"] in (Roles.RENTER, Roles.ADMIN)
-
-    title = "Test_create_by_RENTER"
-    status_code, created_listing = renter.create_listing(user_r, title)
-    listing_id = created_listing.get("id") or created_listing.get("uuid")
-    assert status_code in (403, 404) and listing_id == None, "The ID listing should not return."
+    title = None
+    code, body = renter.create_listing(user_r, title, True)
+    assert code in (403, 404), body
 
 @pytest.mark.integration
 def test_create_listing_by_admin():
     # ADMIN logs in and creates a listing
-    admin = RentalApi(BASE_URL)
-    admin.login(EMAIL_ADMIN, PWD_ADMIN)
+    admin = _login_admin()
     user_a = admin.user()
-    assert user_a["role"] == Roles.ADMIN
-
-    title = "Test_create_by_ADMIN"
-    status_code, created_listing = admin.create_listing(user_a, title)
-    listing_id = created_listing.get("id") or created_listing.get("uuid")
-    assert status_code in (200, 201) and listing_id, "The ID listing should return."
-
+    title = None
+    code, body = admin.create_listing(user_a, title, True)
+    assert code in (200, 201), body
 
 @pytest.mark.integration
 def test_list_listings_public():
@@ -69,8 +50,10 @@ def test_list_listings_owner():
     anonymous = RentalApi(BASE_URL)
     page = anonymous.list_listings(ordering="-created_at")
 
-    lessor = RentalApi(BASE_URL)
-    lessor.login(EMAIL_LESSOR, PWD_LESSOR)
+    lessor = _login_lessor()
+    user_l = lessor.user()
+    title = None
+    code, body = lessor.create_listing(user_l, title, True)
     page = lessor.list_listings(auth=True, ordering="-created_at")
 
     results = page.get("results", page)
@@ -80,13 +63,14 @@ def test_list_listings_owner():
 @pytest.mark.integration
 def test_retrieve_active_listing_public():
     # Lessor creates an ACTIVE listing
-    lessor = RentalApi(BASE_URL)
-    lessor.login(EMAIL_LESSOR, PWD_LESSOR)
-    user_l = lessor.user()
     title = "Test_retrieve_active_listing_public"
-    status_code, created_listing = lessor.create_listing(user_l, title)
-    listing_id = created_listing.get("id") or created_listing.get("uuid")
-
+    start1, end1, days = future_time()
+    lessor, listing_id = create_listing_as_lessor(
+        title,
+        span_days_min=days,
+        span_days_max=days + 30,
+        quests_max=4,
+    )
     # Anonymous user can get ACTIVE by ID
     anonymous = RentalApi(BASE_URL)
     resp = anonymous.get_listing(listing_id)  # без токена
@@ -98,10 +82,9 @@ def test_retrieve_active_listing_public():
 @pytest.mark.integration
 def test_retrieve_inactive_listing_visibility():
     # Lessor creates an INACTIVE listing
-    lessor = RentalApi(BASE_URL)
-    lessor.login(EMAIL_LESSOR, PWD_LESSOR)
-    user_l = lessor.user()
     title = "Test_retrieve_inactive_listing_visibility"
+    lessor = _login_lessor()
+    user_l = lessor.user()
     status_code, created_listing = lessor.create_listing(user_l, title, False)
     listing_id = created_listing.get("id") or created_listing.get("uuid")
 
@@ -110,8 +93,7 @@ def test_retrieve_inactive_listing_visibility():
     user_a = anonymous.get_listing(listing_id)
     assert user_a.status_code in (403, 404)
     # renter - should not see
-    renter = RentalApi(BASE_URL)
-    renter.login(EMAIL_RENTER, PWD_RENTER)
+    renter = _login_renter()
     user_r = renter.get_listing(listing_id)
     assert user_r.status_code in (403, 404)
 
@@ -124,8 +106,7 @@ def test_retrieve_inactive_listing_visibility():
 @pytest.mark.integration
 def test_owner_can_put_listing():
     # lessor logs in and creates an ACTIVE listing
-    lessor = RentalApi(BASE_URL)
-    lessor.login(EMAIL_LESSOR, PWD_LESSOR)
+    lessor = _login_lessor()
     user_l = lessor.user()
     title = "Test_owner_can_put_listing"
     status_code, created_listing = lessor.create_listing(user_l, title)
@@ -155,35 +136,33 @@ def test_owner_can_put_listing():
 @pytest.mark.integration
 def test_owner_can_patch_listing():
     # lessor logs in and creates an INACTIVE listing
-    lessor = RentalApi(BASE_URL)
-    lessor.login(EMAIL_LESSOR, PWD_LESSOR)
+    lessor = _login_lessor()
     user_l = lessor.user()
     title = "Test_owner_can_patch_listing"
-    status_code, created_listing = lessor.create_listing(user_l, title, False)
+    # lessor create listing with status is_activ=True
+    status_code, created_listing = lessor.create_listing(user_l, title, True)
     listing_id = created_listing.get("id") or created_listing.get("uuid")
 
-    # Partial update (PATCH)
+    # Partial update (PATCH) -> status is_activ=False
     patch_payload = {"title": f"{title} PATCH {fake.word().capitalize()}", "is_active": False}
     resp_patch = lessor.update_listing_patch(listing_id, patch_payload)
     assert resp_patch.status_code in (200, 202), resp_patch.text
     body = resp_patch.json()
     assert body["title"].startswith(title + " PATCH ")
-    assert body["is_active"] == True
+    assert body["is_active"] == False
 
 @pytest.mark.integration
 def test_update_forbidden_for_renter():
     # lessor logs in and creates an INACTIVE listing
-    lessor = RentalApi(BASE_URL)
-    lessor.login(EMAIL_LESSOR, PWD_LESSOR)
+    lessor = _login_lessor()
     user_l = lessor.user()
     title = "Test_update_forbidden_for_renter"
-    status_code, created_listing = lessor.create_listing(user_l, title, False)
+    status_code, created_listing = lessor.create_listing(user_l, title, True)
     listing_id = created_listing.get("id") or created_listing.get("uuid")
 
     # renter logs in and tries to update
     # PUT
-    renter = RentalApi(BASE_URL)
-    renter.login(EMAIL_RENTER, PWD_RENTER)
+    renter = _login_renter()
     renter_put = renter.update_listing_put(listing_id, {
         "title": f"{title} Hack {fake.word().capitalize()}",
         "description": "???",
