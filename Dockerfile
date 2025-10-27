@@ -15,6 +15,7 @@
 FROM python:3.13-slim
 
 RUN apt-get update && apt-get install -y \
+    default-mysql-client \
     default-libmysqlclient-dev \
     pkg-config \
     build-essential \

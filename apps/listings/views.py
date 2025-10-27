@@ -52,7 +52,14 @@ class ListingViewSet(viewsets.ModelViewSet):
     filterset_class = ListingFilter
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter,]
     search_fields = ["title", "description"]
-    ordering_fields = ["price", "created_at", "rooms", "popularity"]
+    ordering_fields = [
+        "price",
+        "created_at",
+        "rooms",
+        "popularity",
+        "listing_stats__views_count",
+        "listing_stats__reviews_count",
+    ]
     ordering = ["-created_at"]
 
     def get_permissions(self):
@@ -72,27 +79,56 @@ class ListingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Filters the list of Listing instances.
+        - ?ordering=popularity (desc with -)
+        - ?ordering=views or ?ordering=listing_stats__views_count (desc with -)
+        - ?ordering=reviews or ?ordering=listing_stats__reviews_count (desc with -)
         Everyone sees only the ACTIVE status. The owner sees their own and INACTIVE statuses.
         :return:
         """
-        queryset = super().get_queryset().select_related("owner").prefetch_related("listing_stats")
-        # "popularity" - sort by reviews_count DESC
-        if self.request.query_params.get("ordering") in ("popularity", "-popularity"):
-            desc = self.request.query_params["ordering"].startswith("-")
+        queryset = (super().get_queryset().select_related("owner", "listing_stats"))
+
+        ordering_param = (self.request.query_params.get("ordering") or "").strip()
+        # composite sorts
+        if ordering_param in ("popularity", "-popularity"):
+            desc = ordering_param.startswith("-")
             queryset = queryset.annotate(
-                views=Coalesce(F("stats__views_count"), 0),
-                reviews=Coalesce(F("stats__reviews_count"), 0),
-                popularity=F("views") * 2 + F("reviews") * 4
+                views=Coalesce(F("listing_stats__views_count"), 0),
+                reviews=Coalesce(F("listing_stats__reviews_count"), 0),
+                popularity=F("views") * 2 + F("reviews") * 4,
             )
+            # visibility rules for a QuerySet
+            queryset = self._apply_visibility(queryset)
             return queryset.order_by("-popularity" if desc else "popularity")
 
+        # simple sorts
+        if ordering_param:
+            key = ordering_param.lstrip("-")
+            desc = "-" if ordering_param.startswith("-") else ""
+            if key in {"views", "listing_stats__views_count"}:
+                queryset = queryset.order_by(f"{desc}listing_stats__views_count")
+            elif key in {"reviews", "listing_stats__reviews_count"}:
+                queryset = queryset.order_by(f"{desc}listing_stats__reviews_count")
+            else:
+                queryset = queryset.order_by(ordering_param)  # price , created_at, rooms ...
+
+        # visibility rules for a QuerySet
+        return self._apply_visibility(queryset)
+
+    def _apply_visibility(self, queryset):
+        """
+        Sets visibility rules for a QuerySet.
+        Everyone sees only the ACTIVE status. The owner sees their own and INACTIVE statuses.
+        """
         user = self.request.user
+
         # anonymous/RENTER: active only
         if not user.is_authenticated or is_renter(user):
             return queryset.filter(is_active=True)
-        # MODERATOR/ADMIN all (active + inactive)
+
+        # MODERATOR/ADMIN: все (active + inactive)
         if is_moderator(user) or is_admin(user):
             return queryset
+
         # LESSOR
         if is_lessor(user):
             all_flag = self.request.query_params.get("all", "").lower() in {"1", "true", "yes", "y"}
@@ -104,7 +140,6 @@ class ListingViewSet(viewsets.ModelViewSet):
 
         # default: only active
         return queryset.filter(is_active=True)
-
 
     def retrieve(self, request, *args, **kwargs):
         """Statistics: making a view counter increment"""

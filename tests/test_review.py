@@ -1,7 +1,7 @@
 import pytest
 
-from rental_api import future_time, past_time, create_pending_booking, _login_renter, _login_lessor, _login_moderator
-from test_booking import create_listing_as_lessor
+from .rental_api import (future_time, past_time, create_listing_as_lessor, create_pending_booking,
+                         _login_renter, _login_lessor, _login_moderator)
 from apps.core.users_seed_test import BASE_URL
 
 @pytest.mark.integration

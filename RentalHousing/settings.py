@@ -30,6 +30,7 @@ ENV = env("DJANGO_ENV").lower()     # "dev" или "prod"
 DEBUG = env.bool("DEBUG", default=(ENV == "dev"))
 
 PAST_TIME_POSSIBLE = DEBUG          # to debug the creation of reviews
+SECURE_SET_COOKIE = False # if DEBUG else True
 
 SECRET_KEY = env("SECRET_KEY", default="__dev_only_change_me__")
 
@@ -105,6 +106,8 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": r"/api/v1", # prefix API
+    "AUTHOR": "Vadym Zhernovoi",
+    "EMAIL": "zhernovoivadym@gmail.com",
     "COMPONENT_SPLIT_REQUEST": True,
     "SECURITY": [{
         "bearerAuth": [],
@@ -173,7 +176,6 @@ DEFAULT_FROM_EMAIL = "no-reply@example.com"
 if ENV == "prod":
     ALLOWED_HOSTS = [a_hosts.strip() for a_hosts in os.environ.get("ALLOWED_HOSTS", "").split(",") if a_hosts.strip()]
     DATABASES = {"default": mysql_conf()}
-    SECURE_SET_COOKIE = True
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # ?
     EMAIL_HOST = 'smtp.gmail.com'
     EMAIL_PORT = 587
@@ -183,7 +185,6 @@ if ENV == "prod":
 else:
     ALLOWED_HOSTS = [a_hosts.strip() for a_hosts in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if a_hosts.strip()]
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3",}}
-    SECURE_SET_COOKIE = False
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Password validation

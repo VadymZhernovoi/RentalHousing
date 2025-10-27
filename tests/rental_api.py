@@ -42,7 +42,7 @@ class RentalApi:
 
     # USERS
     def user(self):
-        resp = self.sess.get(f"{self.base_url}/user/me/")  # cookies will go automatically
+        resp = self.sess.get(f"{self.base_url}/user/me/")  # cookiesautomatically
         assert resp.status_code == 200, resp.text
         return resp.json()
 

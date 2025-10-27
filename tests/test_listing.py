@@ -1,11 +1,12 @@
 import pytest
-from faker import Faker
 import random
+from faker import Faker
 
 from apps.core.users_seed_test import BASE_URL
-from rental_api import RentalApi, create_listing_as_lessor, future_time, _login_renter, _login_admin, _login_lessor, \
-    fake
-from apps.core.enums import Roles, TypesHousing
+from .rental_api import RentalApi, create_listing_as_lessor, future_time, _login_renter, _login_admin, _login_lessor
+from apps.core.enums import TypesHousing
+
+fake = Faker()
 
 @pytest.mark.integration
 def test_create_listing_by_lessor():

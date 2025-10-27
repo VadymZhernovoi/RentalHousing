@@ -1,7 +1,7 @@
 import pytest
 from datetime import date, timedelta
 
-from rental_api import RentalApi, future_time, create_pending_booking, _login_renter, _login_lessor, create_listing_as_lessor
+from .rental_api import future_time, create_pending_booking, _login_renter, _login_lessor, create_listing_as_lessor
 from apps.core.enums import Availability, StatusBooking
 from apps.core.users_seed_test import BASE_URL, email_for
 
