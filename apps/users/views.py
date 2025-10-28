@@ -15,7 +15,7 @@ from RentalHousing.settings import SECURE_SET_COOKIE
 def set_jwt_cookies(response, user):
     refresh_token = RefreshToken.for_user(user)
     access_token = refresh_token.access_token
-    # Устанавливает JWT токены в cookie.
+    # Sets JWT tokens in cookies.
     access_expiry = datetime.fromtimestamp(access_token['exp'])
     refresh_expiry = datetime.fromtimestamp(refresh_token['exp'])
 
@@ -23,7 +23,7 @@ def set_jwt_cookies(response, user):
         key='access_token',
         value=str(access_token),
         httponly=True,
-        secure=SECURE_SET_COOKIE,
+        secure=False,
         samesite='Lax',
         expires=access_expiry,
         path='/'
@@ -32,7 +32,7 @@ def set_jwt_cookies(response, user):
         key='refresh_token',
         value=str(refresh_token),
         httponly=True,
-        secure=SECURE_SET_COOKIE,
+        secure=False,
         samesite='Lax',
         expires=refresh_expiry,
         path='/'
@@ -109,7 +109,7 @@ class LoginView(APIView):
         if user:
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
-            # Используем exp для установки времени истечения куки
+            # Using exp to set cookie expiration time.
             access_expiry = datetime.fromtimestamp(access_token['exp'])
             refresh_expiry = datetime.fromtimestamp(refresh['exp'])
             response = Response(status=status.HTTP_200_OK)
@@ -117,7 +117,7 @@ class LoginView(APIView):
                 key='access_token',
                 value=str(access_token),
                 httponly=True,
-                secure=SECURE_SET_COOKIE,
+                secure=False,
                 samesite='Lax',
                 expires=access_expiry,
                 path='/'
@@ -126,7 +126,7 @@ class LoginView(APIView):
                 key='refresh_token',
                 value=str(refresh),
                 httponly=True,
-                secure=SECURE_SET_COOKIE,
+                secure=False,
                 samesite='Lax',
                 expires=refresh_expiry,
                 path='/'

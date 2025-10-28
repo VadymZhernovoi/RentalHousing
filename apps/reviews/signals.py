@@ -11,7 +11,9 @@ from ..core.mails import send_safe_mail
 
 @receiver([post_save, post_delete], sender=Review)
 def update_reviews_count(sender, instance, **kwargs):
-    """Counts the number of reviews and averages rating."""
+    """
+    Counts the number of reviews and averages rating.
+    """
     listing = instance.listing
     stats, _ = ListingStats.objects.get_or_create(listing=listing)
     stats.reviews_count = Review.objects.filter(listing=listing).count()
@@ -24,7 +26,9 @@ def update_reviews_count(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Review)
 def send_email(sender, instance: Review, created, update_fields, **kwargs):
-    """Sends an email to the Booking owner and booking renter."""
+    """
+    Sends an email to the Booking owner and booking renter.
+    """
     to_renter_email = get_user_email(instance, 'author')
     to_lessor_email = get_user_email(instance, Roles.LESSOR)
     if to_renter_email or to_lessor_email:
@@ -44,6 +48,7 @@ def send_email(sender, instance: Review, created, update_fields, **kwargs):
 
         if to_renter_email:
             _ = send_safe_mail(subject_to_renter, message, to_renter_email)
+
         if to_lessor_email:
             _ = send_safe_mail(subject_to_lessor, message, to_lessor_email)
 

@@ -1,9 +1,10 @@
-from django.db.models import F, Q
+from decimal import Decimal
+
+from django.db.models import F, Q, IntegerField, DecimalField, Value
 from django.db.models.aggregates import Count
 from django.db.models.functions import Coalesce
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
-from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from drf_spectacular.utils import extend_schema, OpenApiResponse
@@ -24,7 +25,9 @@ from ..listings.models import Listing
                                     description="List of popular searches (paginated)")},
 )
 class PopularSearchesViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/v1/statistics/popular/searches/ - list """
+    """
+    GET /api/v1/statistics/popular/searches/ - list.
+    """
     serializer_class = SearchQueryStatsSerializer
     permission_classes = [permissions.AllowAny]
     queryset = SearchQueryStats.objects.order_by("-count", "-updated_at")
@@ -43,7 +46,9 @@ class PopularSearchesViewSet(viewsets.ReadOnlyModelViewSet):
     responses={200: OpenApiResponse(response=ListingSerializer, description="List of popular listings (paginated)")},
 )
 class PopularListingsViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/v1/statistics/popular/listings/ - list """
+    """
+    GET /api/v1/statistics/popular/listings/ - list.
+    """
     serializer_class = ListingSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -51,12 +56,16 @@ class PopularListingsViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = (
             Listing.objects.select_related("owner", "listing_stats")
             .annotate(
-                views_cnt=Coalesce(F("listing_stats__views_count"), 0),
-                reviews_cnt=Coalesce(F("listing_stats__reviews_count"), 0),
-                rating_avg=Coalesce(F("listing_stats__avg_rating"), 0.0),
+                views_cnt=Coalesce(F("listing_stats__views_count"), Value(0), output_field=IntegerField()),
+                reviews_cnt=Coalesce(F("listing_stats__reviews_count"), Value(0), output_field=IntegerField()),
+                rating_avg=Coalesce(
+                    F("listing_stats__avg_rating"), Value(Decimal("0.00")),
+                    output_field=DecimalField(max_digits=3, decimal_places=2)
+                ),
             )
             .order_by("-views_cnt", "-reviews_cnt", "-rating_avg")
         )
+
         user = self.request.user
         # anonymous/RENTER: active only
         if not user.is_authenticated or is_renter(user):

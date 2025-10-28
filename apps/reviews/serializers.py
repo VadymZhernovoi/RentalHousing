@@ -19,10 +19,9 @@ class ReviewSerializer(serializers.ModelSerializer):
     def get_fields(self):
         """
         Override serializer fields to restrict the selectable value for the "booking" field to completed bookings only.
-        Logic:
+
         - Regular users: only their own bookings with status "completed".
         - Admins: any booking with status "completed".
-        Uses the current request from self.context["request"] to determine the acting user.
         """
         fields = super().get_fields()
         request = self.context.get("request")
@@ -73,8 +72,6 @@ class ReviewSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Auto-substitution listing from booking
-        :param validated_data:
-        :return:
         """
         validated_data["listing"] = validated_data["booking"].listing
 

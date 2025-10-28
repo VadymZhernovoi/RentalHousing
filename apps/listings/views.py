@@ -1,4 +1,5 @@
-from django.core.exceptions import ValidationError
+#from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
@@ -6,7 +7,7 @@ from rest_framework import status
 from django.utils import timezone
 from rest_framework.decorators import action
 from django.db.models.functions import Coalesce
-from django.db.models import Q, F
+from django.db.models import Q, F, Value, IntegerField, DecimalField
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, OpenApiResponse, OpenApiExample
 
 from ..core.enums import StatusBooking
@@ -63,7 +64,9 @@ class ListingViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]
 
     def get_permissions(self):
-        """Access rights depending on the action being performed (HTTP methods)."""
+        """
+        Access rights depending on the action being performed (HTTP methods).
+        """
         if self.action == "create": # for POST
             return [ListingCreatePermission()]
 
@@ -73,17 +76,20 @@ class ListingViewSet(viewsets.ModelViewSet):
         return [permissions.AllowAny()]
 
     def perform_create(self, serializer):
-        """Saves the owner of the Listing instance"""
+        """
+        Saves the owner of the Listing instance.
+        :param serializer:
+        """
         serializer.save(owner=self.request.user)
 
     def get_queryset(self):
         """
         Filters the list of Listing instances.
+
         - ?ordering=popularity (desc with -)
         - ?ordering=views or ?ordering=listing_stats__views_count (desc with -)
         - ?ordering=reviews or ?ordering=listing_stats__reviews_count (desc with -)
         Everyone sees only the ACTIVE status. The owner sees their own and INACTIVE statuses.
-        :return:
         """
         queryset = (super().get_queryset().select_related("owner", "listing_stats"))
 
@@ -92,9 +98,9 @@ class ListingViewSet(viewsets.ModelViewSet):
         if ordering_param in ("popularity", "-popularity"):
             desc = ordering_param.startswith("-")
             queryset = queryset.annotate(
-                views=Coalesce(F("listing_stats__views_count"), 0),
-                reviews=Coalesce(F("listing_stats__reviews_count"), 0),
-                popularity=F("views") * 2 + F("reviews") * 4,
+                views_cnt=Coalesce(F("listing_stats__views_count"), Value(0), output_field=IntegerField()),
+                reviews_cnt=Coalesce(F("listing_stats__reviews_count"), Value(0), output_field=IntegerField()),
+                popularity=F("views_cnt") * 2 + F("reviews_cnt") * 4,
             )
             # visibility rules for a QuerySet
             queryset = self._apply_visibility(queryset)
@@ -117,6 +123,7 @@ class ListingViewSet(viewsets.ModelViewSet):
     def _apply_visibility(self, queryset):
         """
         Sets visibility rules for a QuerySet.
+
         Everyone sees only the ACTIVE status. The owner sees their own and INACTIVE statuses.
         """
         user = self.request.user
@@ -142,7 +149,9 @@ class ListingViewSet(viewsets.ModelViewSet):
         return queryset.filter(is_active=True)
 
     def retrieve(self, request, *args, **kwargs):
-        """Statistics: making a view counter increment"""
+        """
+        Statistics: making a view counter increment.
+        """
         instance = self.get_object()
         session_id = getattr(request, "session", None) and request.session.session_key or ""
         ListingView.objects.create(
@@ -155,7 +164,9 @@ class ListingViewSet(viewsets.ModelViewSet):
         return super().retrieve(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
-        """Statistics: saves search history"""
+        """
+        Statistics: saves search history.
+        """
         queryset = request.query_params
         params = dict(queryset)
         # keywords
@@ -211,7 +222,9 @@ class ListingViewSet(viewsets.ModelViewSet):
         },
     )
     def perform_update(self, serializer):
-        """ Disable Listing editing after approval (or after the deadline) """
+        """
+        Disable Listing editing after approval (or after the deadline).
+        """
         listing = serializer.instance  # self.get_object()
         blocking = self._find_blocking_booking(listing)
         if blocking:
@@ -242,8 +255,8 @@ class ListingViewSet(viewsets.ModelViewSet):
     def toggle_status(self, request, pk=None, *args, **kwargs):
         """
         Toggle ACTIVE/INACTIVE status (is_active field).
+
         Permission: owner (lessor) for their own listing only, or user with the 'listings.toggle_active_listing' perm.
-        Дополнительно можно передать ?value=true|false, чтобы не toggle, а принудительно установить.
         """
         listing = self.get_object()
         user = request.user

@@ -22,7 +22,9 @@ class BookingCreatePermission(BasePermission):
 
 
 class BookingChangePermission(BasePermission):
-    """Renter can change their own (except approve/decline); moderator/admin — change everything"""
+    """
+    Renter can change their own (except approve/decline), Moderator/Admin — change everything.
+    """
     def has_object_permission(self, request, view, obj):
         user = request.user
         if is_admin(user) or is_moderator(user):
@@ -32,7 +34,9 @@ class BookingChangePermission(BasePermission):
 
 
 class BookingApproveDeclineCompletePermission(BasePermission):
-    """Lessor can approve/decline only their own listings. Moderator/Admin — everything"""
+    """
+    Lessor can approve/decline only their own listings, Moderator/Admin — everything.
+    """
     def has_object_permission(self, request, view, obj):
         user = request.user
         if is_admin(user) or is_moderator(user):
@@ -59,31 +63,3 @@ ROLE_PERMS = {
         "reviews.view_review", "reviews.change_review", "reviews.moderate_review",
     ],
 }
-
-###
-# class IsLessor(BasePermission):
-#     def has_permission(self, request, view):
-#         return request.user.is_authenticated and request.user.role in (Roles.LESSOR, Roles.ADMIN)
-#
-# class IsRenter(BasePermission):
-#     def has_permission(self, request, view):
-#         return request.user.is_authenticated and request.user.role in (Roles.RENTER, Roles.ADMIN)
-#
-# class IsOwnerOrReadOnly(BasePermission):
-#     def has_object_permission(self, request, view, obj):
-#         if request.method in SAFE_METHODS:
-#             return True
-#         owner = getattr(obj, "owner", None) or getattr(obj, "user", None)
-#         return request.user.is_authenticated and (request.user == owner or request.user.role == Roles.ADMIN)
-#
-# def can_be_cancelled_by(self, user) -> bool:
-#     return (
-#             user.is_authenticated
-#             and (user.id == self.renter_id or getattr(user, "role", None) == "admin") # only owner or admin can
-#             and self.status in (StatusBooking.PENDING, StatusBooking.APPROVED)
-#             and self.is_can_be_cancellation()
-#     )
-#
-# class CanCancelBooking(BasePermission):
-#     def has_object_permission(self, request, view, obj):
-#         return obj.can_be_cancelled_by(request.user)

@@ -6,6 +6,7 @@ from apps.core.enums import Availability, StatusBooking
 from apps.core.users_seed_test import BASE_URL, email_for
 
 email_lessor2, pwd_lessor2 = email_for("lessor2")
+email_lessor1, pwd_lessor1 = email_for("lessor1")
 
 # TESTS
 @pytest.mark.integration
@@ -73,7 +74,7 @@ def test_not_owner_forbid_approve():
     assert resp.status_code == 403, resp.text
 
     # other lessor makes pending
-    lessor2 = _login_lessor(email_lessor2)
+    lessor2 = _login_lessor(email_lessor1)
     booking_id = create_pending_booking(renter, listing_id, start, end)
     # Not owner (other lessor) is trying to approve -> 403
     resp = lessor2.sess.post(f"{BASE_URL}/bookings/{booking_id}/approve/")

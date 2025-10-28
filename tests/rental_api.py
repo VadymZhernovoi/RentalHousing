@@ -66,7 +66,6 @@ class RentalApi:
     # def create_listing(self, owner, is_active: bool = True, **kwargs):
         """Create an listing (lessor/admin required)."""
         title = f"{fake.word().capitalize()} Apartment" if title is None else title
-        print('\ntitle', title)
         guests_max = kwargs.get("quests_max", random.randint(1, 10))
         baby_cribs_max = kwargs.get("baby_cribs_max", random.randint(1, 3))
         has_kitchen = kwargs.get("has_kitchen", random.choice(Availability.values))
@@ -94,7 +93,7 @@ class RentalApi:
             "has_kitchen": has_kitchen,
             "parking_available": parking_available,
             "pets_possible": pets_possible,
-            "type": random.choice(TypesHousing.values),
+            "type_housing": random.choice(TypesHousing.values),
             "is_active": is_active,
         }
         resp = self.sess.post(f"{self.base_url}/listings/", json=payload)
@@ -188,6 +187,7 @@ def create_pending_booking(renter_api: RentalApi, listing_id: str, start: str, e
 email_lessor, pwd_lessor = email_for("lessor1")
 email_lessor2, pwd_lessor2 = email_for("lessor2")
 email_renter, pwd_renter = email_for("renter1")
+email_renter2, pwd_renter2 = email_for("renter2")
 email_moderator, pwd_moderator = email_for("mod1")
 
 def _login_lessor(email_les=email_lessor):

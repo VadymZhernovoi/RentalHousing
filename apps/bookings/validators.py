@@ -12,7 +12,9 @@ if TYPE_CHECKING:
     from .models import Booking  # noqa: F401
 
 def _BookingModel():
-    """Lazy fetching of Booking model without imports."""
+    """
+    Lazy fetching of Booking model without imports.
+    """
     return apps.get_model("bookings", "Booking")
 
 def validate_listing_active(booking: Any):
@@ -23,6 +25,7 @@ def validate_overlap_approved(booking: Any):
     """
     Disallow bookings if there is an APPROVED booking for this listing,
     which is not yet closed and has overlapping dates.
+
     Occurrence condition: existing.start_date < new_end AND existing.end_date > new_start
     """
     if not booking.listing or not booking.start_date or not booking.end_date:
@@ -47,7 +50,6 @@ def validate_dates(booking: Any):
             {"end_date":
             f"end_date ({booking.end_date.isoformat()}) must be after start date ({booking.start_date.isoformat()})."}
         )
-    print("\nsettings.PAST_TIME_POSSIBLE", PAST_TIME_POSSIBLE)
     if not PAST_TIME_POSSIBLE: # to debug the creation of reviews
         today = timezone.localdate()
         if booking.start_date < today:
@@ -97,6 +99,9 @@ def validate_max_span(booking: Any):
         raise ValidationError({"span_days": f"Reservations cannot exceed {span_days_max} nights."})
 
 def validate_owner_not_self(booking: Any):
+    """
+    The owner cannot reserve his listing.
+    """
     # The owner cannot reserve his listing
     if (getattr(booking, "renter_id", None) and
         getattr(booking.listing, "owner_id", None) and booking.renter_id == booking.listing.owner_id):
@@ -111,7 +116,9 @@ def validate_baby_cribs_positive(booking: Any):
         raise ValidationError({"baby_cribs": "Baby cribs must be >= 0."})
     
 def check_booking_validations(booking: Any):
-    """All checks."""
+    """
+    All checks.
+    """
     validate_owner_not_self(booking)
     validate_listing_active(booking)
     validate_dates(booking)

@@ -29,11 +29,10 @@ Env.read_env(BASE_DIR / ".env")
 ENV = env("DJANGO_ENV").lower()     # "dev" или "prod"
 DEBUG = env.bool("DEBUG", default=(ENV == "dev"))
 
-PAST_TIME_POSSIBLE = DEBUG          # to debug the creation of reviews
-SECURE_SET_COOKIE = False # if DEBUG else True
+PAST_TIME_POSSIBLE = False          # to debug the creation of reviews
+SECURE_SET_COOKIE = False           # if DEBUG else True
 
 SECRET_KEY = env("SECRET_KEY", default="__dev_only_change_me__")
-
 
 # Application definition
 INSTALLED_APPS = [
@@ -106,8 +105,7 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": r"/api/v1", # prefix API
-    "AUTHOR": "Vadym Zhernovoi",
-    "EMAIL": "zhernovoivadym@gmail.com",
+    "CONTACT": {"name": "Vadym Zhernovoi", "email": "zhernovoivadym@gmail.com"},
     "COMPONENT_SPLIT_REQUEST": True,
     "SECURITY": [{
         "bearerAuth": [],
@@ -177,11 +175,11 @@ if ENV == "prod":
     ALLOWED_HOSTS = [a_hosts.strip() for a_hosts in os.environ.get("ALLOWED_HOSTS", "").split(",") if a_hosts.strip()]
     DATABASES = {"default": mysql_conf()}
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # ?
-    EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = 'your_email@gmail.com'
-    EMAIL_HOST_PASSWORD = 'your_password'
+    EMAIL_HOST = os.environ["EMAIL_HOST"]
+    EMAIL_PORT = os.environ["EMAIL_PORT"]
+    EMAIL_USE_TLS = os.environ["EMAIL_USE_TLS"]
+    EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
+    EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
 else:
     ALLOWED_HOSTS = [a_hosts.strip() for a_hosts in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if a_hosts.strip()]
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3",}}
@@ -211,13 +209,6 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# # LOGGING
-# LOGGING = {
-#     "version": 1,
-#     "disable_existing_loggers": False,
-#     "handlers": {"console": {"class": "logging.StreamHandler"}},
-#     "root": {"handlers": ["console"], "level": "DEBUG" if DEBUG else "INFO"},
-# }
 LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
@@ -278,11 +269,8 @@ LOGGING = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DEFAULT_SPAN_DAYS_MAX = 365
-"""
-STATIC_URL = '/static/'
 
-if not DEBUG:
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-"""
+# STATIC_URL = '/static/'
+# if not DEBUG:
+#     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+#     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

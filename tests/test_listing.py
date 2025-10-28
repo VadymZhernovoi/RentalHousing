@@ -2,11 +2,13 @@ import pytest
 import random
 from faker import Faker
 
-from apps.core.users_seed_test import BASE_URL
+from apps.core.users_seed_test import BASE_URL, email_for
 from .rental_api import RentalApi, create_listing_as_lessor, future_time, _login_renter, _login_admin, _login_lessor
 from apps.core.enums import TypesHousing
 
 fake = Faker()
+
+email_lessor2, pwd_lessor2 = email_for("lessor2")
 
 @pytest.mark.integration
 def test_create_listing_by_lessor():
@@ -51,7 +53,7 @@ def test_list_listings_owner():
     anonymous = RentalApi(BASE_URL)
     page = anonymous.list_listings(ordering="-created_at")
 
-    lessor = _login_lessor()
+    lessor = _login_lessor(email_lessor2)
     user_l = lessor.user()
     title = None
     code, body = lessor.create_listing(user_l, title, True)

@@ -6,7 +6,9 @@ from ..core.enums import StatusBooking
 
 
 def overlaps(qs, booking):
-    """Are there any overlaps between booking and already approved ones in the database (except for itself)."""
+    """
+    Are there any overlaps between booking and already approved ones in the database (except for itself).
+    """
     return qs.filter(
         listing=booking.listing,
         status=StatusBooking.APPROVED,

@@ -8,6 +8,7 @@ DEFAULT_FROM = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@example.com")
 def send_safe_mail(subject: str, message: str, to_email: str) -> bool:
     """
     Sends a single email.
+
     :param subject: subject
     :param message: message
     :param to_email: email address

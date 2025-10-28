@@ -37,6 +37,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Filters reservations.
+
         Renter sees their reservations. Lessor sees reservations for their listings. Admin — all.
         :return: queryset
         """
@@ -69,7 +70,8 @@ class BookingViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["POST"], permission_classes=[IsAuthenticated, BookingApproveDeclineCompletePermission])
     def approve(self, request, pk=None):
         """
-        Action - Approve/Pending booking by Lessor
+        Action - Approve/Pending booking by Lessor.
+
         :param request: POST /api/v1/bookings/{id}/approve/
         :return: retry with COMPLETED → 200
         """
@@ -105,6 +107,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     def decline(self, request, pk=None):
         """
         Action - Decline booking by Lessor
+
         :param request: POST /api/v1/bookings/{id}/decline/
         :return: retry with COMPLETED → 200
         """
@@ -137,6 +140,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     def cancelled(self, request, pk=None):
         """
         Action - Cancel booking by Renter (owner) before deadline
+
         :param request: POST /api/v1/bookings/{id}/cancelled/
         :return: retry on CANCELLED → 200
         """
@@ -180,6 +184,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     def completed(self, request, pk=None):
         """
         Action - Completed booking by Lessor (owner of the listing) after checkout
+
         :param request: POST /api/v1/bookings/{id}/completed/
         :return: retry on COMPLETED → 200
         """

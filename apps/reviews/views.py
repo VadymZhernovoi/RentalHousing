@@ -1,5 +1,5 @@
 from rest_framework.decorators import action
-from rest_framework import generics, mixins, filters
+from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
 from rest_framework import viewsets, permissions
@@ -34,7 +34,6 @@ from ..core.permissions import is_admin
 #
 #         return queryset.order_by("-created_at")
 
-
 @extend_schema(
     description=(
         "List reviews (optionally filter by listing, only-my) and create a review.\n"
@@ -49,7 +48,8 @@ from ..core.permissions import is_admin
         200: OpenApiResponse(response=ReviewSerializer, description="List of reviews (paginated)"),
     },
 )
-# class ReviewListCreateView(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+
+
 class ReviewListCreateView(viewsets.ModelViewSet):
     """
     GET  /api/reviews/?listing=<uuid>&my=true&ordering=-created_at

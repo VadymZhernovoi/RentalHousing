@@ -47,7 +47,9 @@ def decline_overlapping_pending_on_status_approve(sender, instance: Booking, cre
 
 @receiver(post_save, sender=Booking)
 def send_email_to(sender, instance: Booking, created, update_fields, **kwargs):
-    """Sends an email to the Booking owner and booking renter."""
+    """
+    Sends an email to the Booking owner and booking renter.
+    """
     to_renter_email = get_user_email(instance, Roles.RENTER)
     to_lessor_email = get_user_email(instance, Roles.LESSOR)
     if to_renter_email or to_lessor_email:

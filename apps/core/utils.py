@@ -6,7 +6,8 @@ User = get_user_model()
 def get_user_for(obj, kind):
     """
     Returns a user of the specified type from a Listing / Booking / Review object.
-    kind:
+
+    Kind:
     - "owner": Listing.owner / Booking.listing.owner
     - "lessor": Listing.owner
     - "renter": Booking.renter
@@ -32,7 +33,9 @@ def get_user_for(obj, kind):
 
 
 def get_user_email(obj, kind) :
-    """ Email user (owner/lessor/renter/author) or None. """
+    """
+    Email user (owner/lessor/renter/author) or None.
+    """
     user = get_user_for(obj, kind)
     if user is not None:
         return getattr(user, "email", None)

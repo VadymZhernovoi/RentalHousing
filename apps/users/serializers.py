@@ -29,7 +29,11 @@ from ..core.enums import Roles
 #         fields = ("id", "username", "nickname", "email", "first_name", "last_name", "role")
 
 class RegisterUserSerializer(serializers.ModelSerializer):
-    # Password is accepted separately and validated.
+    """
+    Register user serializer.
+
+    Password is accepted separately and validated.
+    """
     password = serializers.CharField(write_only=True, min_length=8)
     password2 = serializers.CharField(write_only=True)
     role = serializers.ChoiceField(choices=Roles.choices, required=True)
@@ -92,7 +96,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 class UserLoggedInSerializer(serializers.ModelSerializer):
-    """Профиль текущего пользователя для /user/login/ (на самом деле /me)."""
+    """
+    Current user profile for /user/login/.
+    """
     class Meta:
         model = User
         fields = ("id", "email", "username", "first_name", "last_name", "role", "nickname")

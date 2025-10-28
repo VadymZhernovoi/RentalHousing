@@ -10,7 +10,6 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ("email", "username", "first_name", "last_name")
     ordering = ("email",)
 
-    # поля на странице изменения пользователя
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Personal info", {"fields": ("username", "first_name", "last_name", "nickname", "role")}),
@@ -18,15 +17,9 @@ class UserAdmin(BaseUserAdmin):
         ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
 
-    # поля на странице создания пользователя в админке
     add_fieldsets = (
         (None, {
             "classes": ("wide",),
             "fields": ("email", "username", "first_name", "last_name", "password1", "password2", "role", "is_staff",),
         }),
     )
-
-
-from django.contrib import admin
-
-# Register your models here.

@@ -26,6 +26,9 @@ class ListingView(TimeStampedModel):
 
 
 class SearchQuery(TimeStampedModel):
+    """
+    Search query keywords + params.
+    """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -43,6 +46,9 @@ class SearchQuery(TimeStampedModel):
 
 
 class SearchQueryStats(TimeStampedModel):
+    """
+    Search query statistics.
+    """
     keywords = models.CharField(max_length=255, unique=True, verbose_name=_("Keywords"))
     count = models.PositiveIntegerField(default=0, verbose_name=_("Count"))
 
@@ -53,6 +59,8 @@ class SearchQueryStats(TimeStampedModel):
 
 class ListingStats(TimeStampedModel):
     """
+    Statistics for a listing.
+
     - views_count: total number of views
     - reviews_count: number of reviews
     - avg_rating: average rating

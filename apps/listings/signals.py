@@ -1,7 +1,5 @@
 from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
-from django.core.mail import send_mail
-from django.conf import settings
 
 from ..listings.models import Listing
 from ..bookings.models import Booking, StatusBooking
@@ -9,13 +7,12 @@ from ..statistics.models import ListingStats
 from ..reviews.models import Review
 from ..core.enums import Roles
 from ..core.utils import get_user_email
-from RentalHousing.settings import DEFAULT_FROM_EMAIL
 from ..core.mails import send_safe_mail
 
 @receiver(pre_save, sender=Listing)
 def listing_pre_save_capture_old_status(sender, instance: Listing, **kwargs):
     """
-    Before saving listing, we read the previous status from the database and put it in _old_status
+    Before saving listing, read the previous status from the database and put it in _old_status
     """
     if instance.pk:
         try:
@@ -60,7 +57,9 @@ def recalc_total_cost_bookings_on_change(sender, instance: Listing, created, upd
 
 @receiver([post_save, post_delete], sender=Review)
 def update_reviews_count(sender, instance, **kwargs):
-    """Counts the number of reviews"""
+    """
+    Counts the number of reviews
+    """
     listing = instance.listing
     stats, _ = ListingStats.objects.get_or_create(listing=listing)
     stats.reviews_count = Review.objects.filter(listing=listing).count()
